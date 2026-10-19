@@ -1,7 +1,9 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>ايدج للتوزيع</title><meta name="claude:viewport-fit-sides" content="cover"><style id="app-css">
-/* Layout: wholesale order sheet. Product grid sold by the carton on the right (RTL),
-   sticky order panel on the left on desktop, bottom sheet on phones.
-   Editors get an admin sheet to manage products, categories and settings. */
+<title>ايدج للتوزيع</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style id="app-css">
+/* Layout: three panes on wide screens. Group tree on the right (RTL), the products of the
+   chosen group in the middle, the order panel on the left. Phones get group chips and a bottom sheet.
+   Editors get an admin sheet to manage products, groups and settings. */
 :root {
   --bg: #f1f4f2;
   --card: #ffffff;
@@ -44,70 +46,96 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.app { max-width: 1180px; margin-inline: auto; }
+.app { max-width: 1280px; margin-inline: auto; }
 
 .notice { margin-top: 12px; padding: 8px 12px; border: 1px dashed var(--tag); border-radius: 4px; font-size: 13px; color: var(--muted); }
 header.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 0 18px; }
 .brand h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: clamp(32px, 6vw, 52px); line-height: 1.1; letter-spacing: 0; text-wrap: balance; }
-.brand p { margin: 6px 0 0; color: var(--muted); max-width: 46ch; }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 52ch; }
 .rule { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); align-items: center; }
 .rule span { border: 1px solid var(--line); background: var(--card); padding: 3px 10px; border-radius: 3px; }
 .btn-admin { border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); padding: 5px 14px; border-radius: 4px; font-weight: 600; }
 
-.toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
 .search { width: 100%; padding: 10px 14px; border: 1px solid var(--line); background: var(--card); border-radius: 4px; }
+.mob { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
 .chip { flex: none; padding: 6px 14px; border: 1px solid var(--line); background: var(--card); border-radius: 999px; font-weight: 500; }
+.chip.sm { padding: 3px 12px; font-size: 13px; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 18px; }
-@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 18px; }
+.tree { display: none; }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: 250px minmax(0, 1fr) 340px; align-items: start; }
+  .mob { display: none; }
+  .tree { display: block; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 86px); max-height: calc(100vh - 106px); overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
+}
+.tr-main, .tr-sub { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: right; border: 0; background: transparent; padding: 8px 10px; border-radius: 3px; }
+.tr-main { font-weight: 600; }
+.tr-sub { font-size: 14px; padding-inline-start: 22px; }
+.tr-main:hover, .tr-sub:hover { background: var(--accent-soft); }
+.tr-main.open:not(.on) { background: var(--accent-soft); }
+.tr-main.on, .tr-sub.on { background: var(--accent); color: var(--accent-ink); }
+.n { font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; flex: none; }
 
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-.empty { grid-column: 1 / -1; padding: 40px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; }
-.prod { background: var(--card); border: 1px solid var(--line); border-radius: 4px; display: flex; flex-direction: column; min-width: 0; }
-.prod .strip { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px dashed var(--line); font-size: 12px; color: var(--muted); }
-.sku { font-family: var(--f-mono); direction: ltr; background: var(--tag); color: var(--tag-ink); padding: 1px 7px; border-radius: 2px; font-weight: 500; display: inline-block; }
-.prod .box { display: grid; place-items: center; padding: 14px 0 4px; color: var(--accent); }
-.prod .box svg { width: 64px; height: 64px; }
-.prod .body { padding: 6px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.prod h3 { margin: 0; font-size: 16px; font-weight: 600; text-wrap: balance; }
-.pack { color: var(--muted); font-size: 13px; }
-.price { margin-top: auto; padding-top: 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.price strong { font-family: var(--f-display); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.price small { color: var(--muted); font-size: 12px; }
-.add { width: 100%; margin-top: 8px; padding: 9px 12px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+#pane { min-width: 0; scroll-margin-top: 150px; }
+.crumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 14px; }
+.crumb button { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0; text-decoration: underline; }
+.crumb .cur { font-family: var(--f-display); font-size: 20px; font-weight: 700; }
+.crumb .sep { color: var(--muted); }
+.crumb .cnt { margin-inline-start: auto; color: var(--muted); font-size: 13px; }
+
+.gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.gcard { text-align: right; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gcard:hover { border-color: var(--accent); }
+.gcard b { font-family: var(--f-display); font-size: 19px; line-height: 1.3; }
+.gcard .m { font-size: 12px; color: var(--muted); }
+.gcard .s { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sub-h { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 8px; font-family: var(--f-display); font-size: 18px; }
+.sub-h:first-child { margin-top: 0; }
+.sub-h button { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); text-align: right; }
+.sub-h button:hover { color: var(--accent); }
+.sub-h .cnt { color: var(--muted); font-size: 13px; font-family: var(--f-body); }
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; }
+.rows { background: var(--card); border: 1px solid var(--line); border-radius: 4px; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row.in { background: var(--accent-soft); }
+.row .nm { font-weight: 500; overflow-wrap: anywhere; }
+.row .meta { color: var(--muted); font-size: 12px; }
+.sku { font-family: var(--f-mono); direction: ltr; background: var(--tag); color: var(--tag-ink); padding: 1px 7px; border-radius: 2px; font-weight: 500; display: inline-block; font-size: 12px; min-width: 38px; text-align: center; }
+.add { padding: 6px 18px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .add:hover { filter: brightness(1.08); }
 
 .stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
-.stepper button { width: 38px; border: 0; background: transparent; font-size: 20px; line-height: 1; }
+.stepper button { width: 36px; border: 0; background: transparent; font-size: 20px; line-height: 1; height: 34px; }
 .stepper button:hover { background: var(--accent-soft); }
-.stepper output { min-width: 40px; display: grid; place-items: center; font-weight: 600; font-variant-numeric: tabular-nums; border-inline: 1px solid var(--line); }
-.prod .stepper { width: 100%; margin-top: 8px; }
-.prod .stepper output { flex: 1; }
-.prod .stepper button { height: 38px; }
+.stepper output { min-width: 38px; display: grid; place-items: center; font-weight: 600; font-variant-numeric: tabular-nums; border-inline: 1px solid var(--line); }
 
 .cart { background: var(--card); border: 1px solid var(--line); border-radius: 4px; display: flex; flex-direction: column; }
-@media (min-width: 900px) { .cart { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 150px); max-height: calc(100vh - 170px); overflow: auto; } }
-@media (max-width: 899px) {
+@media (min-width: 1100px) { .cart { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 86px); max-height: calc(100vh - 106px); overflow: auto; } }
+@media (max-width: 1099px) {
   .cart { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; max-height: 88%; overflow: auto; border-radius: 10px 10px 0 0; transform: translateY(105%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 40px var(--shadow); }
   .cart.open { transform: none; visibility: visible; transition: transform .22s ease; }
 }
 .cart-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .cart-head h2 { margin: 0; font-family: var(--f-display); font-size: 22px; }
 .close { display: none; border: 1px solid var(--line); background: transparent; border-radius: 4px; padding: 4px 10px; }
-@media (max-width: 899px) { .close { display: inline-block; } }
+@media (max-width: 1099px) { .close { display: inline-block; } }
 .lines { list-style: none; margin: 0; padding: 0; }
 .line { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
-.line .nm { font-weight: 600; min-width: 0; }
+.line .nm { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .line .sub { color: var(--muted); font-size: 12px; }
 .line .tot { font-weight: 600; font-variant-numeric: tabular-nums; text-align: left; }
 .line .rm { border: 0; background: transparent; color: var(--danger); font-size: 12px; padding: 0; }
 .line .ctl { display: flex; align-items: center; gap: 12px; grid-column: 1 / -1; }
 .line .stepper button { height: 32px; width: 34px; }
 .cart-empty { padding: 28px 14px; color: var(--muted); text-align: center; }
-.sum { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.sum { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .sum strong { font-family: var(--f-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.sum small { color: var(--muted); font-size: 12px; }
 
 form.order { display: grid; gap: 10px; padding: 14px; }
 .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 3px; }
@@ -116,7 +144,6 @@ form.order { display: grid; gap: 10px; padding: 14px; }
 .field .err { color: var(--danger); font-size: 12px; }
 .field input[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: var(--danger); }
 .submit { padding: 12px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 16px; }
-.submit[disabled] { opacity: .45; cursor: not-allowed; }
 
 .done { padding: 14px; display: grid; gap: 12px; }
 .done h3 { margin: 0; font-family: var(--f-display); font-size: 22px; }
@@ -125,18 +152,18 @@ form.order { display: grid; gap: 10px; padding: 14px; }
 .btns { display: grid; gap: 8px; }
 .btn { display: block; text-align: center; text-decoration: none; padding: 11px; border-radius: 4px; border: 1px solid var(--accent); font-weight: 600; background: transparent; color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); }
-.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
 
 .bar { position: fixed; z-index: 40; bottom: 0; left: 0; right: 0; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px var(--shadow); }
 .bar button { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
-@media (min-width: 900px) { .bar { display: none; } body { padding-bottom: 40px; } }
+@media (min-width: 1100px) { .bar { display: none; } body { padding-bottom: 40px; } }
 .scrim { position: fixed; inset: 0; z-index: 45; background: rgba(0, 0, 0, 0.45); }
 footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
 
 /* admin sheet */
 .admin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: auto;
   padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
-.ad-wrap { max-width: 860px; margin-inline: auto; }
+.ad-wrap { max-width: 920px; margin-inline: auto; }
 .ad-head { position: sticky; top: 0; z-index: 2; background: var(--bg); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .ad-head h2 { margin: 0; font-family: var(--f-display); font-size: 24px; margin-inline-end: auto; }
 .ad-status { font-size: 13px; color: var(--muted); width: 100%; order: 5; min-height: 20px; }
@@ -149,49 +176,54 @@ footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
 .ad-tabs { display: flex; gap: 6px; margin: 14px 0; }
 .ad-tab { padding: 8px 16px; border: 1px solid var(--line); background: var(--card); border-radius: 4px; font-weight: 600; }
 .ad-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.ad-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.ad-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+.ad-bar input, .ad-bar select { padding: 8px 12px; border: 1px solid var(--line); background: var(--card); border-radius: 4px; min-width: 0; }
+.ad-bar input { flex: 1 1 180px; }
+.ad-bar select { flex: 1 1 150px; max-width: 100%; }
+.ad-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
 .ad-row { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
-.ad-row .info { min-width: 0; flex: 1 1 220px; }
+.ad-row .info { min-width: 0; flex: 1 1 220px; overflow-wrap: anywhere; }
 .ad-row .sub { color: var(--muted); font-size: 12px; }
 .ad-row.off { opacity: .65; }
 .ad-act { display: flex; gap: 6px; flex-wrap: wrap; }
-.badge { font-size: 11px; border: 1px solid var(--line); padding: 0 6px; border-radius: 3px; color: var(--muted); }
-.ad-form { background: var(--card); border: 1px solid var(--accent); border-radius: 4px; padding: 14px; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.badge { font-size: 11px; border: 1px solid var(--line); padding: 0 6px; border-radius: 3px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.ad-form { background: var(--card); border: 1px solid var(--accent); border-radius: 4px; padding: 14px; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
 .ad-form .wide { grid-column: 1 / -1; }
-.ad-form .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ad-form .row2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 @media (max-width: 560px) { .ad-form { grid-template-columns: minmax(0, 1fr); } }
 .ad-sec { margin: 22px 0 8px; font-family: var(--f-display); font-size: 20px; }
 .ad-grid { display: grid; gap: 10px; }
 .check { display: flex; gap: 8px; align-items: center; }
 .check input { width: auto; }
+.ad-grp { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 8px; }
+.ad-grp-h, .ad-subs li, .ad-add { display: flex; gap: 8px; align-items: center; }
+.ad-grp-h input { font-weight: 700; }
+.ad-grp input[type="text"], .ad-grp input:not([type]) { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; }
+.ad-subs { list-style: none; margin: 0; padding: 0 18px 0 0; display: grid; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .cart { transition: none !important; } }
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap"><template id="shell">
 <div class="app" dir="rtl" lang="ar">
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="carton" viewBox="0 0 64 64">
-      <path d="M8 20 32 8l24 12v26L32 58 8 46Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M8 20l24 12 24-12M32 32v26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M20 14l24 12v8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-    </symbol>
-  </svg>
-
-  <div class="notice" id="notice" hidden=""></div>
+  <div class="notice" id="notice" hidden></div>
 
   <header class="top">
     <div class="brand">
       <h1 id="brandName"></h1>
       <p id="tagline"></p>
     </div>
-    <div class="rule"><span>البيع بالكرتونة</span><span>الأسعار بالجنيه المصري</span><button type="button" class="btn-admin" id="adminBtn" hidden="">إدارة الموقع</button></div>
+    <div class="rule"><span id="statN"></span><span id="statG"></span><button type="button" class="btn-admin" id="adminBtn" hidden>إدارة الموقع</button></div>
   </header>
 
   <div class="toolbar">
     <input id="q" class="search" type="search" placeholder="دوّر على صنف أو كود…" aria-label="بحث في الأصناف" autocomplete="off">
-    <div class="chips" id="chips" role="group" aria-label="التصنيفات"></div>
+    <div class="mob">
+      <div class="chips" id="chips" role="group" aria-label="المجموعات الأساسية"></div>
+      <div class="chips" id="subchips" role="group" aria-label="المجموعات الفرعية" hidden></div>
+    </div>
   </div>
 
   <div class="layout">
-    <main><div class="grid" id="grid"></div></main>
+    <nav class="tree" id="tree" aria-label="المجموعات"></nav>
+    <main id="pane"><div class="crumb" id="crumb"></div><div id="list"></div></main>
 
     <aside class="cart" id="cart" aria-label="السلة">
       <div class="cart-head">
@@ -205,11 +237,11 @@ footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
   <footer>الكميات والأسعار النهائية بتتأكد مع مندوب المبيعات قبل التوصيل.</footer>
 
   <div class="bar" id="bar"><button id="openCart" type="button"><span id="barCount">السلة فاضية</span><span id="barTotal"></span></button></div>
-  <div class="scrim" id="scrim" hidden=""></div>
+  <div class="scrim" id="scrim" hidden></div>
 
-  <div class="admin" id="admin" hidden="" role="dialog" aria-label="إدارة الموقع"><div class="ad-wrap" id="adminBody"></div></div>
+  <div class="admin" id="admin" hidden role="dialog" aria-label="إدارة الموقع"><div class="ad-wrap" id="adminBody"></div></div>
 </div>
-</template><div id="root"></div><script type="application/json" id="site-data">{"settings":{"storeName":"ايدج للتجارة والتوزيع","tagline":"اختار الأصناف، حدد عدد الكراتين، وابعت الطلب. بنراجعه معاك ونأكد ميعاد التوصيل.","whatsapp":"201021397965","notice":"نسخة تجريبية. الأصناف والأسعار دي أمثلة لحد ما تحط أصنافكم الحقيقية."},"cats":[{"id":"oil","name":"زيوت وسمن"},{"id":"gro","name":"بقالة"},{"id":"bev","name":"مشروبات"},{"id":"cln","name":"منظفات"}],"products":[{"sku":"OIL-101","cat":"oil","name":"زيت عباد الشمس ١ لتر","pcs":12,"unit":"كرتونة","price":840,"hidden":false},{"sku":"OIL-102","cat":"oil","name":"سمن نباتي ٧٠٠ جم","pcs":12,"unit":"كرتونة","price":780,"hidden":false},{"sku":"GRO-201","cat":"gro","name":"أرز مصري ١ كجم","pcs":10,"unit":"كرتونة","price":520,"hidden":false},{"sku":"GRO-202","cat":"gro","name":"سكر أبيض ١ كجم","pcs":10,"unit":"كرتونة","price":480,"hidden":false},{"sku":"GRO-203","cat":"gro","name":"مكرونة ٤٠٠ جم","pcs":20,"unit":"كرتونة","price":360,"hidden":false},{"sku":"GRO-204","cat":"gro","name":"صلصة طماطم ٣٠٠ جم","pcs":24,"unit":"كرتونة","price":420,"hidden":false},{"sku":"BEV-301","cat":"bev","name":"شاي أسود ٢٥٠ جم","pcs":20,"unit":"كرتونة","price":1600,"hidden":false},{"sku":"BEV-302","cat":"bev","name":"مياه معدنية ١٫٥ لتر","pcs":6,"unit":"شرينك","price":54,"hidden":false},{"sku":"BEV-303","cat":"bev","name":"عصير مانجو ١ لتر","pcs":12,"unit":"كرتونة","price":420,"hidden":false},{"sku":"CLN-401","cat":"cln","name":"سائل غسيل أطباق ٧٥٠ مل","pcs":12,"unit":"كرتونة","price":540,"hidden":false},{"sku":"CLN-402","cat":"cln","name":"مسحوق غسيل ٢ كجم","pcs":6,"unit":"كرتونة","price":720,"hidden":false},{"sku":"CLN-403","cat":"cln","name":"مناديل ورقية","pcs":48,"unit":"كرتونة","price":960,"hidden":false}]}</script><script id="app-js">
+</template><div id="root"></div><script type="application/json" id="site-data">{"settings":{"storeName":"ايدج للتجارة والتوزيع","tagline":"اختار المجموعة، حدد الكميات، وابعت الطلب. بنراجعه معاك ونأكد ميعاد التوصيل.","whatsapp":"201021397965","notice":""},"cats":[{"id":"m1","name":"افريل"},{"id":"m2","name":"انفنتي"},{"id":"m3","name":"ايجي قطن"},{"id":"m4","name":"ايفا"},{"id":"m5","name":"ايماج"},{"id":"m6","name":"بالمرز"},{"id":"m7","name":"بندولين"},{"id":"m8","name":"بوبانا"},{"id":"m9","name":"جونسون واكس"},{"id":"m10","name":"سباركل"},{"id":"m11","name":"سكاى"},{"id":"m12","name":"سكينيفاي"},{"id":"m13","name":"سينور"},{"id":"m14","name":"فرش اسنان"},{"id":"m15","name":"فور ويل"},{"id":"m16","name":"كوكو واكس"},{"id":"m17","name":"مستحضرات لوريال"},{"id":"m18","name":"منتجات ME"},{"id":"m19","name":"منتجات جيم"},{"id":"m20","name":"منتجات ميلفا"},{"id":"m21","name":"مينك وريال"},{"id":"m22","name":"نيفيا"},{"id":"m23","name":"هاش"}],"subs":[{"id":"s1","cat":"m1","name":"منتجات العنايه بالشعر"},{"id":"s2","cat":"m2","name":"فيتامينات ومكملات"},{"id":"s3","cat":"m2","name":"مزيلات عرق"},{"id":"s4","cat":"m2","name":"معطرات للجسم"},{"id":"s5","cat":"m2","name":"منتجات العناية بالبشرة"},{"id":"s6","cat":"m2","name":"منتجات العنايه بالشعر"},{"id":"s7","cat":"m3","name":"منتجات قطنية"},{"id":"s8","cat":"m4","name":"إيفا سكين كير"},{"id":"s9","cat":"m4","name":"ايفا"},{"id":"s10","cat":"m4","name":"ايفا ريسبى"},{"id":"s11","cat":"m4","name":"بدون مجموعة فرعية"},{"id":"s12","cat":"m4","name":"كريمات البشرة"},{"id":"s13","cat":"m5","name":"منتجات للبشره"},{"id":"s14","cat":"m5","name":"منتجات للشعر"},{"id":"s15","cat":"m6","name":"منتجات بالمرز"},{"id":"s16","cat":"m7","name":"منتجات عناية بالبشرة"},{"id":"s17","cat":"m7","name":"منتجات عناية بالشعر"},{"id":"s18","cat":"m8","name":"بدون مجموعة فرعية"},{"id":"s19","cat":"m8","name":"منتجات العناية بالبشره"},{"id":"s20","cat":"m8","name":"منتجات العنايه بالشعر"},{"id":"s21","cat":"m9","name":"بليدج"},{"id":"s22","cat":"m9","name":"جليد"},{"id":"s23","cat":"m10","name":"سباركل"},{"id":"s24","cat":"m11","name":"بروتين"},{"id":"s25","cat":"m11","name":"بلسم"},{"id":"s26","cat":"m11","name":"حمام كريم"},{"id":"s27","cat":"m11","name":"زيدورا كريمات للبشرة"},{"id":"s28","cat":"m11","name":"سيرم للشعر"},{"id":"s29","cat":"m11","name":"شامبو"},{"id":"s30","cat":"m11","name":"صابون استحمام"},{"id":"s31","cat":"m11","name":"صابون لليد"},{"id":"s32","cat":"m11","name":"كريم تصفيف"},{"id":"s33","cat":"m12","name":"منتجات للعنايه بالبشرة"},{"id":"s34","cat":"m12","name":"منتجات للعنايه بالشعر"},{"id":"s35","cat":"m13","name":"منتجات للشعر"},{"id":"s36","cat":"m14","name":"د- براش"},{"id":"s37","cat":"m15","name":"صبغة شعر سي كالر"},{"id":"s38","cat":"m16","name":"واكس"},{"id":"s39","cat":"m17","name":"الفيف"},{"id":"s40","cat":"m17","name":"جارنييه قناع الوجه"},{"id":"s41","cat":"m17","name":"جلايكولك"},{"id":"s42","cat":"m17","name":"صبغة اكسلانس"},{"id":"s43","cat":"m17","name":"صبغة غارنيية كالور ناتشونالز"},{"id":"s44","cat":"m17","name":"صبغة كاستينج"},{"id":"s45","cat":"m17","name":"صبغه برودجى"},{"id":"s46","cat":"m17","name":"غارنيية منتجات للبشرة"},{"id":"s47","cat":"m17","name":"فاست فيرنس"},{"id":"s48","cat":"m17","name":"لوريال منتجات للبشرة"},{"id":"s49","cat":"m17","name":"مزيل مكياج"},{"id":"s50","cat":"m17","name":"هيالورون"},{"id":"s51","cat":"m18","name":"بدون مجموعة فرعية"},{"id":"s52","cat":"m18","name":"معطرات مي"},{"id":"s53","cat":"m19","name":"انيرجي"},{"id":"s54","cat":"m19","name":"ديزار"},{"id":"s55","cat":"m19","name":"زيرو فريز"},{"id":"s56","cat":"m19","name":"ستاركين"},{"id":"s57","cat":"m19","name":"يارا"},{"id":"s58","cat":"m20","name":"ميلفا"},{"id":"s59","cat":"m21","name":"رويال"},{"id":"s60","cat":"m21","name":"مينك"},{"id":"s61","cat":"m22","name":"بدون مجموعة فرعية"},{"id":"s62","cat":"m22","name":"سوفت"},{"id":"s63","cat":"m22","name":"غسول وجه نيفيا"},{"id":"s64","cat":"m22","name":"كريم نيفيا"},{"id":"s65","cat":"m22","name":"مزيل مكياج"},{"id":"s66","cat":"m22","name":"مزيلات عرق"},{"id":"s67","cat":"m22","name":"منتجات حلاقة الوجة"},{"id":"s68","cat":"m23","name":"منتجات عنايه بالبشرة"}],"products":[{"sku":"3760","name":"أفريل عطر الشعر بالتوت والماغنوليا 100 مل","cat":"m1","sub":"s1"},{"sku":"3761","name":"أفريل عطر الشعر بالخوخ والياسمين 100 مل","cat":"m1","sub":"s1"},{"sku":"3759","name":"أفريل عطر الشعر بالعود وخشب الصندل 100 مل","cat":"m1","sub":"s1"},{"sku":"3738","name":"ابلسم أفريل بالكيراتين و الكولاجين 250 مل","cat":"m1","sub":"s1"},{"sku":"3736","name":"افريل بلسم الشعر بالكرياتين و الكولاجين 400 مل","cat":"m1","sub":"s1"},{"sku":"3735","name":"افريل بلسم الشعر بزبدة الشيا و زيت الارجان 400 مل","cat":"m1","sub":"s1"},{"sku":"3737","name":"افريل بلسم الشعر بزيت الزيتون و زيت الجرجير 400 مل","cat":"m1","sub":"s1"},{"sku":"3758","name":"افريل جيل ببذر الكتان 250 مل","cat":"m1","sub":"s1"},{"sku":"3744","name":"افريل زيت الشعر بزيت الارجان و الجرجير و زيت اللوز و زيت الجوجوبا 50 مل","cat":"m1","sub":"s1"},{"sku":"3742","name":"افريل زيت الشعر بزيت الروزماري و زيت الزيتون و زيت الجرجير 50 مل","cat":"m1","sub":"s1"},{"sku":"3745","name":"افريل زيت الشعر بزيت النيوم و زيت الخروع و زيت خشب الأرز 50 مل","cat":"m1","sub":"s1"},{"sku":"3743","name":"افريل زيت الشعر بفيتامين اي 50 مل","cat":"m1","sub":"s1"},{"sku":"3754","name":"افريل سيرم الشعر بجوز الهند و مستخلص الصبار 100 مل","cat":"m1","sub":"s1"},{"sku":"3727","name":"افريل شامبو الشعر بالكرياتين و الكولاجين 400 مل","cat":"m1","sub":"s1"},{"sku":"3729","name":"افريل شامبو الشعر بالنعناع وعشب الليمون 400 مل","cat":"m1","sub":"s1"},{"sku":"3726","name":"افريل شامبو الشعر بزبدة الشيا و زيت الارجان 400 مل","cat":"m1","sub":"s1"},{"sku":"3730","name":"افريل شامبو بفيتامين اي و البايوتين 400 مل","cat":"m1","sub":"s1"},{"sku":"3753","name":"افريل عطر الشعر بالفانيليا و السكر 100 مل","cat":"m1","sub":"s1"},{"sku":"3752","name":"افريل عطر الشعر بالورود و زهرة اللافندر 100 مل","cat":"m1","sub":"s1"},{"sku":"3756","name":"افريل ليف ان بزبدة الشيا و زيت الارجان 250 مل","cat":"m1","sub":"s1"},{"sku":"3755","name":"افريل ليف ان بزيت اللوز و زيت الجوجوبا 250 مل","cat":"m1","sub":"s1"},{"sku":"3747","name":"افريل ماسك الشعر بزيت الزيتون و زيت الجرجير 500 مل","cat":"m1","sub":"s1"},{"sku":"3748","name":"افريل ماسك الشعر بفيتامين اي و البيوتين 500 مل","cat":"m1","sub":"s1"},{"sku":"3741","name":"بلسم أفريل بالفيتامين ايه + البيوتين 250 مل","cat":"m1","sub":"s1"},{"sku":"3740","name":"بلسم أفريل بزبدة الشيا و زيت الارجان 250 مل","cat":"m1","sub":"s1"},{"sku":"3739","name":"بلسم أفريل بزيت الزيتون و زيت الجرجير 250 مل","cat":"m1","sub":"s1"},{"sku":"3731","name":"شامبو أفريل بالكرياتين و الكولاجين 250 مل","cat":"m1","sub":"s1"},{"sku":"3733","name":"شامبو أفريل بزبدة الشيا و زيت الارجان 250 مل","cat":"m1","sub":"s1"},{"sku":"3732","name":"شامبو أفريل بزيت الزيتون و زيت الجرجير 250 مل","cat":"m1","sub":"s1"},{"sku":"3734","name":"شامبو أفريل بفيتامين ايه + البيوتين 250 مل","cat":"m1","sub":"s1"},{"sku":"3751","name":"ماسك لترطيب عميق أفريل بالفيتامين ايه + البيوتين 300 مل","cat":"m1","sub":"s1"},{"sku":"3750","name":"ماسك لترطيب عميق أفريل بزيت الزيتون و زيت الجرجير 300 مل","cat":"m1","sub":"s1"},{"sku":"3615","name":"انفنتي بيوفيتا جيلي كاندي كيدز 60+بيوفيتا كيدز30","cat":"m2","sub":"s2"},{"sku":"3362","name":"انفينتي بيوفيتا جيلي كاندي 60 قطعة + اوميجا 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3428","name":"انفينيتي اوميجا ار اكس 60 قطعة + بيوفيتا جيلي كاندي 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3374","name":"انفينيتي اوميجا ار اكس جيلي كاندي 60 قطعة + اوميجا ار اكس جيلي كاندي 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3363","name":"انفينيتي باني فيتا فيتامين د 15 مل","cat":"m2","sub":"s2"},{"sku":"3361","name":"انفينيتي بيوفيتا جيلي كاندي 60 قطعة + 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3392","name":"انفينيتي فالودال 60 قطعة + فالودال 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3364","name":"انفينيتي كالسيما بلس 30 قطعة","cat":"m2","sub":"s2"},{"sku":"3423","name":"انفينيتي مايفي فيتامينات اطفال 60 قرص","cat":"m2","sub":"s2"},{"sku":"3416","name":"انفينيتي مايفي فيتامينات العظام بطعم الفواكه 60 قرص","cat":"m2","sub":"s2"},{"sku":"3422","name":"انفينيتي مايفي فيتامينات المناعه بطعم البرتقال 60 قرص","cat":"m2","sub":"s2"},{"sku":"3415","name":"انفينيتي مايفي فيتامينات بيوتي بطعم الفراوله 60 قرص","cat":"m2","sub":"s2"},{"sku":"3418","name":"انفينيتي مايفي فيتامينات رجال 60 قرص","cat":"m2","sub":"s2"},{"sku":"3419","name":"انفينيتي مايفي فيتامينات سيدات 60 قرص","cat":"m2","sub":"s2"},{"sku":"3417","name":"انفينيتي مايفي فيتامينات فوكاس 60 قرص","cat":"m2","sub":"s2"},{"sku":"3421","name":"انفينيتي مايفي فيتامينات كالم بالتفاح 60 قرص","cat":"m2","sub":"s2"},{"sku":"3590","name":"انفنتي اسبراي اريبيان 200 مل","cat":"m2","sub":"s3"},{"sku":"3591","name":"انفنتي اسبراي بيري ديلايت200 مل","cat":"m2","sub":"s3"},{"sku":"3593","name":"انفنتي اسبراي دارك الور200 مل","cat":"m2","sub":"s3"},{"sku":"3592","name":"انفنتي اسبراي شيري سيلك200 مل","cat":"m2","sub":"s3"},{"sku":"3594","name":"انفنتي اسبراي ميستك روج200 مل","cat":"m2","sub":"s3"},{"sku":"3606","name":"انفنتي رول اون اوشن بيريز + عود 80 مل (1+1)","cat":"m2","sub":"s3"},{"sku":"3605","name":"انفنتي رول اون بيري 80 مل (1+1)","cat":"m2","sub":"s3"},{"sku":"3607","name":"انفنتي رول اون هيربل 80 مل (1+1)","cat":"m2","sub":"s3"},{"sku":"3408","name":"انفينيتي بادي سبلاش ارابيان نايتس 150 مل","cat":"m2","sub":"s4"},{"sku":"3402","name":"انفينيتي بادي سبلاش ارابيان نايتس 250 مل","cat":"m2","sub":"s4"},{"sku":"3406","name":"انفينيتي بادي سبلاش بيري ديلايت 150 مل","cat":"m2","sub":"s4"},{"sku":"3401","name":"انفينيتي بادي سبلاش بيري ديلايت 250 مل","cat":"m2","sub":"s4"},{"sku":"3409","name":"انفينيتي بادي سبلاش تشيري سيلك 150 مل","cat":"m2","sub":"s4"},{"sku":"3404","name":"انفينيتي بادي سبلاش تشيري سيلك 250 مل","cat":"m2","sub":"s4"},{"sku":"3410","name":"انفينيتي بادي سبلاش دارك الور 150 مل","cat":"m2","sub":"s4"},{"sku":"3405","name":"انفينيتي بادي سبلاش دارك الور 250 مل","cat":"m2","sub":"s4"},{"sku":"3407","name":"انفينيتي بادي سبلاش ميستيك روج 150 مل","cat":"m2","sub":"s4"},{"sku":"3403","name":"انفينيتي بادي سبلاش ميستيك روج 250 مل","cat":"m2","sub":"s4"},{"sku":"3353","name":"انفينيتي رول اون اوشن بريز 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3356","name":"انفينيتي رول اون اوشن بريز 80 مل + عود 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3350","name":"انفينيتي رول اون بيري 50 مل + عود 80 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3351","name":"انفينيتي رول اون بيري 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3352","name":"انفينيتي رول اون عود 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3357","name":"انفينيتي رول اون فروتي 50 مل + بيري 80 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3354","name":"انفينيتي سوثينج رول اون هيربال 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3355","name":"انفينيتي فيتامين سي رول اون 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3358","name":"انفينيتي وايتنينج رول اون فروتي 80 مل + 50 مل (1+1)","cat":"m2","sub":"s4"},{"sku":"3821","name":"Naturals Facial Scrub Menthol Crystals 150 gm","cat":"m2","sub":"s5"},{"sku":"3360","name":"اكرين كلينسر 250 مل + اكرين كريم 60 جم","cat":"m2","sub":"s5"},{"sku":"3604","name":"انفنتي رول اون بيري+عود 80 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3589","name":"انفنتي صن سكرين دراي سبراي SPF+50","cat":"m2","sub":"s5"},{"sku":"3603","name":"انفنتي فيلفيت تاتش60 جرام spf+50","cat":"m2","sub":"s5"},{"sku":"3684","name":"انفنتي كريم بانثينول 5% سوفت للبشره الجافه30 مل","cat":"m2","sub":"s5"},{"sku":"3597","name":"انفنتي كريم بانثينول 5% سوفت للبشره الجافه50 مل","cat":"m2","sub":"s5"},{"sku":"3598","name":"انفنتي كلنسينج جيل 200 مل","cat":"m2","sub":"s5"},{"sku":"3616","name":"انفنتي ماسك شيت فيتامين سي","cat":"m2","sub":"s5"},{"sku":"3596","name":"انفنتي ميسلار ووتر هايدروجين 250 مل","cat":"m2","sub":"s5"},{"sku":"3595","name":"انفنتي هايالو كولاجين سيرم 30 مل","cat":"m2","sub":"s5"},{"sku":"3609","name":"انفنتي وايتنينج كريم جل","cat":"m2","sub":"s5"},{"sku":"3608","name":"انفنتي وايتنينج كلنسينج فوم 200 مل","cat":"m2","sub":"s5"},{"sku":"3426","name":"انفينتى سوثينج كريم مرطب بعد الليزر 120 ملى","cat":"m2","sub":"s5"},{"sku":"3425","name":"انفينتى غسول للبشره الحساسه 200 ملى","cat":"m2","sub":"s5"},{"sku":"3349","name":"انفينتي ريتينول كريم 50 جم","cat":"m2","sub":"s5"},{"sku":"3348","name":"انفينتي ريتينول كريم للعين 30 جم","cat":"m2","sub":"s5"},{"sku":"3488","name":"انفينيتي إنتنس اسبوت كريم 30 ملل","cat":"m2","sub":"s5"},{"sku":"3411","name":"انفينيتي انستا بوست غسول وجة بالكولاجين 150 مل + 50 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3412","name":"انفينيتي انستا سوث غسول وجة بالسميد الاحمر 150 مل + 50 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3391","name":"انفينيتي بادي كير اندر ارم سيروم سبراي بالشاي الأخضر 200 مل","cat":"m2","sub":"s5"},{"sku":"3390","name":"انفينيتي بادي كير اندر ارم سيروم سبراي بالعرقسوس والصبار 200 مل","cat":"m2","sub":"s5"},{"sku":"3485","name":"انفينيتي بالهيالو كولاجين كريم 50 جرام","cat":"m2","sub":"s5"},{"sku":"3490","name":"انفينيتي تريتو سيرم 120 مل","cat":"m2","sub":"s5"},{"sku":"3489","name":"انفينيتي تريتو كريم 120 مل","cat":"m2","sub":"s5"},{"sku":"3385","name":"انفينيتي توب هير لوشن بلس","cat":"m2","sub":"s5"},{"sku":"3396","name":"انفينيتي تونر المنقي والقشر200 مل","cat":"m2","sub":"s5"},{"sku":"3400","name":"انفينيتي دانديل كريم 100 جم","cat":"m2","sub":"s5"},{"sku":"3345","name":"انفينيتي ديلي مويسترايزينج كريم 50 مل","cat":"m2","sub":"s5"},{"sku":"3487","name":"انفينيتي ريتينول سيرم 30 ملل","cat":"m2","sub":"s5"},{"sku":"3424","name":"انفينيتي سوثينج اند مويست جيل 120 مل","cat":"m2","sub":"s5"},{"sku":"3398","name":"انفينيتي سيكا ريبير كريم 50 جم","cat":"m2","sub":"s5"},{"sku":"3379","name":"انفينيتي صن سكرين ميست 120 مل + هايدرو بوست جيل + لوشن","cat":"m2","sub":"s5"},{"sku":"3347","name":"انفينيتي غسول للوجة انستا جلو 150 مل + 50 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3346","name":"انفينيتي غسول للوجة انستا كلير 150 مل + 50 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3393","name":"انفينيتي فيتامين سي سيرم+ غسول(1+1)","cat":"m2","sub":"s5"},{"sku":"3359","name":"انفينيتي كريم جل صن اويل كنترول البشرة 50 مل","cat":"m2","sub":"s5"},{"sku":"3486","name":"انفينيتي كريم كونتور للعين بالهيالو كولاجين30 جرام","cat":"m2","sub":"s5"},{"sku":"3395","name":"انفينيتي كريم وايتنييج تفتيح محيط العين","cat":"m2","sub":"s5"},{"sku":"3397","name":"انفينيتي كولاجين مضاد للشيخوخة نهار + ليل 50 مل 1+1","cat":"m2","sub":"s5"},{"sku":"3378","name":"انفينيتي كير انفيزيبول فيلفيت تاتش 60 جم + هايدرو بوست جيل","cat":"m2","sub":"s5"},{"sku":"3380","name":"انفينيتي كير تينتيد SPF 50 60 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3683","name":"انفينيتي كير صن سكرين الترا فلويد 50 جم","cat":"m2","sub":"s5"},{"sku":"3389","name":"انفينيتي كير صن سكرين الترا فلويد 50 جم (1+1)","cat":"m2","sub":"s5"},{"sku":"3376","name":"انفينيتي كير صن سكرين ميست 120 مل عرض 1 + 1 مجاناَ","cat":"m2","sub":"s5"},{"sku":"3381","name":"انفينيتي كير كيدز SPF 45 - 120 مل 1+1","cat":"m2","sub":"s5"},{"sku":"3375","name":"انفينيتي كير لوشن SPF 50+ 60 مل (1+1)","cat":"m2","sub":"s5"},{"sku":"3384","name":"انفينيتي كير هايدرو بوست جيل + لوشن 60 مل","cat":"m2","sub":"s5"},{"sku":"3377","name":"انفينيتي كير هايدرو بوست جيل SPF 50+ انتي شاين (1+1)","cat":"m2","sub":"s5"},{"sku":"3413","name":"انفينيتي لاسكار جيل 60 جم (1+1)","cat":"m2","sub":"s5"},{"sku":"3373","name":"انفينيتي مرهم للحروق اوينتمنت 15 جم","cat":"m2","sub":"s5"},{"sku":"3372","name":"انفينيتي موبينورم مساج كريم 60 جم","cat":"m2","sub":"s5"},{"sku":"3371","name":"انفينيتي موبييز مساج جيل 60 جم","cat":"m2","sub":"s5"},{"sku":"3414","name":"انفينيتي مويسترايزينج كريم 120 مل","cat":"m2","sub":"s5"},{"sku":"3365","name":"انفينيتي هاند كريم هيداجين ارابيان نايتس 50 مل","cat":"m2","sub":"s5"},{"sku":"3366","name":"انفينيتي هاند كريم هيداجين بيري ديلايت 50 مل","cat":"m2","sub":"s5"},{"sku":"3367","name":"انفينيتي هاند كريم هيداجين تشيري سيلك 50 مل","cat":"m2","sub":"s5"},{"sku":"3368","name":"انفينيتي هاند كريم هيداجين دارك الور 50 مل","cat":"m2","sub":"s5"},{"sku":"3369","name":"انفينيتي هاند كريم هيداجين ميستيك روج 50 مل","cat":"m2","sub":"s5"},{"sku":"3370","name":"انفينيتي هيالو كولاجين المنظف فوم 200 مل","cat":"m2","sub":"s5"},{"sku":"3394","name":"انفينيتي وايتنينج صن سكرين SPF 50+","cat":"m2","sub":"s5"},{"sku":"3427","name":"انفينيتي وايتنينج كريم تفتيح 60 جم (1+1)","cat":"m2","sub":"s5"},{"sku":"3610","name":"انفنتي توب هير امبول 10 مل 8امبول","cat":"m2","sub":"s6"},{"sku":"3388","name":"انفينيتي تريتو انتي داندروف شامبو 250 مل","cat":"m2","sub":"s6"},{"sku":"3387","name":"انفينيتي تريتو سيروم 80 مل","cat":"m2","sub":"s6"},{"sku":"3386","name":"انفينيتي تريتو شامبو 250 مل + تريتو بلسم 250 مل","cat":"m2","sub":"s6"},{"sku":"3491","name":"انفينيتي توب هير شامبو + بلسم 250 مل","cat":"m2","sub":"s6"},{"sku":"3492","name":"انفينيتي توب هير لوشن 120 مل 1+1","cat":"m2","sub":"s6"},{"sku":"3399","name":"انفينيتي دانديل شامبو 250 مل","cat":"m2","sub":"s6"},{"sku":"2809","name":"فيلفت اعواد اذن 120 قطعه","cat":"m3","sub":"s7"},{"sku":"2808","name":"فيلفت كروية 200 قطعة","cat":"m3","sub":"s7"},{"sku":"2810","name":"فيلفت كيس قطن زجزاج 100 قطعه","cat":"m3","sub":"s7"},{"sku":"2807","name":"فيلفت مربع 160 قطعه","cat":"m3","sub":"s7"},{"sku":"3639","name":"2ق ايفا كير اشراقه طبيعيه رول مزيل لتفتيح البشره اكتيف فريش 60جم %50","cat":"m4","sub":"s8"},{"sku":"3641","name":"2ق ايفا كير اشراقه طبيعيه رول مزيل لتفتيح البشره باودر سوفت 60جم %50","cat":"m4","sub":"s8"},{"sku":"3640","name":"2ق ايفا كير اشراقه طبيعيه رول مزيل لتفتيح البشره فيلفت تاتش 60جم %50","cat":"m4","sub":"s8"},{"sku":"3133","name":"ايفا سكين كير اشراقه طبيعيه كريم الوجه النهارى بمعامل حمايه 30 50 جرام","cat":"m4","sub":"s8"},{"sku":"3132","name":"ايفا سكين كير اشراقه طبيعيه كريم الوجه اليلى 50 جرام","cat":"m4","sub":"s8"},{"sku":"3131","name":"ايفا سكين كير اشراقه طبيعيه كريم تفتيح للمناطق الحساسه 50 جرام","cat":"m4","sub":"s8"},{"sku":"3138","name":"ايفا سكين كير اشراقه طبيعيه مقشر الجسم 250 جم","cat":"m4","sub":"s8"},{"sku":"3690","name":"باوتش الو ايفا حمام كريم لتقويه الشعر بالصبار و بروتينات الحرير 250 مل","cat":"m4","sub":"s8"},{"sku":"3687","name":"عرض الو ايفا زيت الشعر بخلصة الصبار و المل 170 مل (%10)","cat":"m4","sub":"s8"},{"sku":"3689","name":"عرض الو ايفا زيت الشعر بخلصة الصبار و المل 255 مل (%10)","cat":"m4","sub":"s8"},{"sku":"3627","name":"الو ايفا بديل الزيت لتقويه الشعر بالصبار و زيت الرجان المغربى 250 ml (%25)","cat":"m4","sub":"s9"},{"sku":"3632","name":"باوتش الو ايفا حمام كريم لتقويه الشعر بالصبار 250 مل","cat":"m4","sub":"s9"},{"sku":"3631","name":"باوتش الو ايفا حمام كريم لتقويه الشعر بالصبار و الرجان المغربي 250 مل","cat":"m4","sub":"s9"},{"sku":"3633","name":"باوتش الو ايفا حمام كريم لتقويه الشعر بالصبار و بروتينات الزبادى 250 مل","cat":"m4","sub":"s9"},{"sku":"3626","name":"بلسم مقوى للشعر بالصبار وزيت الرجان المغربى 230 مل","cat":"m4","sub":"s9"},{"sku":"3625","name":"شامبو مقوى للشعر بالصبار وزيت الرجان المغربى 230 مل","cat":"m4","sub":"s9"},{"sku":"3693","name":"عرض 'الو ايفا زيت الشعر بخلصة الصبار 170 مل (%10)","cat":"m4","sub":"s9"},{"sku":"3692","name":"عرض 'الو ايفا زيت الشعر بخلصة الصبار 85 مل (%10)","cat":"m4","sub":"s9"},{"sku":"3697","name":"عرض ايفا اوبتيموم كير ريسبى سيلك اند شاين بلند بلسم ml350 - برائحة المارشميلو (%15)","cat":"m4","sub":"s9"},{"sku":"3696","name":"عرض ايفا اوبتيموم كير ريسبى سيلك اند شاين بلند شامبو350 ml - برائحة المارشميلو (%15)","cat":"m4","sub":"s9"},{"sku":"3695","name":"عرض ايفا اوبتيموم كير ريسبى هايدريتنج بلند شامبو 350 ml - برائحة التوت (%15)","cat":"m4","sub":"s9"},{"sku":"3628","name":"عرض بديل الزيت للشعر بالصبار 250 مل (%25)","cat":"m4","sub":"s9"},{"sku":"3630","name":"عرض بديل الزيت للشعر بالصبار و بروتينات الزبادى 250 مل (%25)","cat":"m4","sub":"s9"},{"sku":"1428","name":"كريم شعر صبار 185 جم","cat":"m4","sub":"s9"},{"sku":"1427","name":"كريم شعر صبار 85 جم","cat":"m4","sub":"s9"},{"sku":"1430","name":"كريم شعر عسل 185 جم","cat":"m4","sub":"s9"},{"sku":"1429","name":"كريم شعر عسل 85 جم","cat":"m4","sub":"s9"},{"sku":"3115","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة الخوخ 370 مل","cat":"m4","sub":"s10"},{"sku":"3113","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة الفانيليا 370 مل","cat":"m4","sub":"s10"},{"sku":"3114","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة المارشميلو 370 مل","cat":"m4","sub":"s10"},{"sku":"3118","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة الموكا 370 مل","cat":"m4","sub":"s10"},{"sku":"3819","name":"عرض ايفا اوبتيموم كير ريسبى ايدج ديفاينج بلند لوشن 370 مل - برائحة الموكا (%15)","cat":"m4","sub":"s10"},{"sku":"3820","name":"عرض ايفا اوبتيموم كير ريسبى ريفايفل لوشن 370 مل - برائحة الخوخ (%15)","cat":"m4","sub":"s10"},{"sku":"3637","name":"عرض ايفا اوبتيموم كير ريسبى سترنجث بوستر بلند بلسم 350 ml برائحة الموكا (%15)","cat":"m4","sub":"s10"},{"sku":"3635","name":"عرض ايفا اوبتيموم كير ريسبى سترنجث بوستر بلند شامبو 350 ml برائحة الموكا (%15)","cat":"m4","sub":"s10"},{"sku":"3638","name":"عرض ايفا اوبتيموم كير ريسبى نوريشنج بلند بلسم 350 ml برائحة جوز الهند (%15)","cat":"m4","sub":"s10"},{"sku":"3636","name":"عرض ايفا اوبتيموم كير ريسبى نوريشنج بلند شامبو 350 ml برائحة جوز الهند (%15)","cat":"m4","sub":"s10"},{"sku":"3818","name":"عرض ايفا اوبتيموم كير ريسبى هايدريتنج بلند بلسم ml350 - برائحة التوت (%15)","cat":"m4","sub":"s10"},{"sku":"3116","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة التوت 370 مل","cat":"m4","sub":"s11"},{"sku":"3117","name":"ايفا اوبتيموم كير ريسبى كريم للاستحمام برائحة جوز الهند 370 مل","cat":"m4","sub":"s11"},{"sku":"3817","name":"ايفا سكين كير اشراقه طبيعيه كريم تفتيح و ترطيب منطقه تحت العين 15 مل","cat":"m4","sub":"s12"},{"sku":"1436","name":"بودرة سموكرز بالمسواك كبير ايفا","cat":"m4","sub":"s12"},{"sku":"1434","name":"بودرة سموكرز بالمنتول كبير ايفا","cat":"m4","sub":"s12"},{"sku":"3691","name":"كريم شعر صبار 45 جم","cat":"m4","sub":"s12"},{"sku":"2855","name":"غسول وجه ايماج","cat":"m5","sub":"s13"},{"sku":"2840","name":"كريم اساس انبوبه ايماج","cat":"m5","sub":"s13"},{"sku":"2841","name":"كريم اساس تايجر ايماج","cat":"m5","sub":"s13"},{"sku":"2827","name":"كريم ايماج للبشره 185 ملل","cat":"m5","sub":"s13"},{"sku":"3261","name":"كريم بشرة برونزانا 200 مل ايماج","cat":"m5","sub":"s13"},{"sku":"2856","name":"كريم تفتيح ايماج","cat":"m5","sub":"s13"},{"sku":"2893","name":"ماسك صنفره تفتيح ايماج","cat":"m5","sub":"s13"},{"sku":"3221","name":"واكس ايماج","cat":"m5","sub":"s13"},{"sku":"3602","name":"ايماج جيل سيدا 500 جرام","cat":"m5","sub":"s14"},{"sku":"2830","name":"بلسم ايماج 900 ملل","cat":"m5","sub":"s14"},{"sku":"2835","name":"جل كريم الجولد ايماج 2*1","cat":"m5","sub":"s14"},{"sku":"2831","name":"حمام كريم ايماج 1كيلو","cat":"m5","sub":"s14"},{"sku":"2829","name":"شامبو ايماج 900 ملل","cat":"m5","sub":"s14"},{"sku":"2832","name":"شاور جيل ايماج1000 ملل","cat":"m5","sub":"s14"},{"sku":"2833","name":"كريم شعر بالبلسم ايماج","cat":"m5","sub":"s14"},{"sku":"2828","name":"هير فود ايماج 3*1","cat":"m5","sub":"s14"},{"sku":"2838","name":"واكس جل ايماج","cat":"m5","sub":"s14"},{"sku":"1970","name":"بالمرز برجموت 150جرام برطمان","cat":"m6","sub":"s15"},{"sku":"2987","name":"بندولين شاور جيل فريش للاطفال 300 مل","cat":"m7","sub":"s16"},{"sku":"2980","name":"بندولين شامبو 450 مل","cat":"m7","sub":"s17"},{"sku":"3477","name":"بوبانا صابون مغربي ارجان 500 جم","cat":"m8","sub":"s18"},{"sku":"3466","name":"بوبانا جل صنفرة بالفحم 150 مل","cat":"m8","sub":"s19"},{"sku":"3494","name":"بوبانا جل كولاجين ريتينول","cat":"m8","sub":"s19"},{"sku":"3493","name":"بوبانا جل كولاجين فيتامين سي","cat":"m8","sub":"s19"},{"sku":"3478","name":"بوبانا صابون مغربي زيتون 500 جم","cat":"m8","sub":"s19"},{"sku":"3464","name":"بوبانا طمى بحر ميت 400 جرام","cat":"m8","sub":"s19"},{"sku":"3463","name":"بوبانا طمى مغربي 400 جرام","cat":"m8","sub":"s19"},{"sku":"3474","name":"بوبانا غسول ريتينول 150 مل","cat":"m8","sub":"s19"},{"sku":"3472","name":"بوبانا غسول فيتامين سي 150 مل","cat":"m8","sub":"s19"},{"sku":"3473","name":"بوبانا غسول هيالورونيك 150 مل","cat":"m8","sub":"s19"},{"sku":"3470","name":"بوبانا غسول وجه بالريتينول 50 مل","cat":"m8","sub":"s19"},{"sku":"3471","name":"بوبانا غسول وجه بالفحم 150 مل","cat":"m8","sub":"s19"},{"sku":"3467","name":"بوبانا غسول وجه بالفحم 50 مل","cat":"m8","sub":"s19"},{"sku":"3468","name":"بوبانا غسول وجه فيتامين سي 50 مل","cat":"m8","sub":"s19"},{"sku":"3469","name":"بوبانا غسول وجه هيالورونيك 50 مل","cat":"m8","sub":"s19"},{"sku":"3621","name":"بوبانا قناع ورقي بالرمان والهيلارونيك","cat":"m8","sub":"s19"},{"sku":"3583","name":"بوبانا قناع ورقي بالفحم وفيتامين اي","cat":"m8","sub":"s19"},{"sku":"3584","name":"بوبانا قناع ورقي بالكولاجين وفيتامين سي","cat":"m8","sub":"s19"},{"sku":"3830","name":"بوبانا قناع ورقي بجوز الهند والهالرونيك","cat":"m8","sub":"s19"},{"sku":"3476","name":"بوبانا كريم تفتيح للمناطق الحساسة 50 جرام","cat":"m8","sub":"s19"},{"sku":"3475","name":"بوبانا كريم تفتيح للوجه والجسم 50 جرام","cat":"m8","sub":"s19"},{"sku":"3451","name":"بوبانا كريم صنفرة بالذهب 300 جرام","cat":"m8","sub":"s19"},{"sku":"3455","name":"بوبانا كريم صنفرة بالعسل والكولاجين 300 جرام","cat":"m8","sub":"s19"},{"sku":"3452","name":"بوبانا كريم صنفرة بالفحم 300 جرام","cat":"m8","sub":"s19"},{"sku":"3454","name":"بوبانا كريم صنفرة بالقهوة 300 جرام","cat":"m8","sub":"s19"},{"sku":"3453","name":"بوبانا كريم صنفرة بالمشمش 300 جرام","cat":"m8","sub":"s19"},{"sku":"3514","name":"بوبانا كريم يد جوز هند 50 مل","cat":"m8","sub":"s19"},{"sku":"3515","name":"بوبانا كريم يد فواكه استوائية","cat":"m8","sub":"s19"},{"sku":"3516","name":"بوبانا كريم يد ورود برية","cat":"m8","sub":"s19"},{"sku":"3517","name":"بوبانا لوشن جسم جوز هند 240 مل","cat":"m8","sub":"s19"},{"sku":"3518","name":"بوبانا لوشن جسم فواكه استوائية 240 مل","cat":"m8","sub":"s19"},{"sku":"3519","name":"بوبانا لوشن جسم ورود برية 240 مل","cat":"m8","sub":"s19"},{"sku":"3620","name":"بوبانا ماسك حليب ترطيب (فيتامين C)","cat":"m8","sub":"s19"},{"sku":"3456","name":"بوبانا ماسك حليب ترطيب (فيتامين E)","cat":"m8","sub":"s19"},{"sku":"3457","name":"بوبانا ماسك حليب تفتيح (كولاجين)","cat":"m8","sub":"s19"},{"sku":"3458","name":"بوبانا ماسك حليب تفتيح (منثول)","cat":"m8","sub":"s19"},{"sku":"3448","name":"بوبانا ماسك قناع الذهب 120 جرام","cat":"m8","sub":"s19"},{"sku":"3447","name":"بوبانا ماسك قناع الفحم 120 جرام","cat":"m8","sub":"s19"},{"sku":"3449","name":"بوبانا ماسك قناع الهيالورونيك 120 جم","cat":"m8","sub":"s19"},{"sku":"3450","name":"بوبانا ماسك قناع فيتامين سي 120 جم","cat":"m8","sub":"s19"},{"sku":"3658","name":"بوبانا مزيل عرق انتعاش بحري 60 مل","cat":"m8","sub":"s19"},{"sku":"3483","name":"بوبانا مزيل عرق انتعاش جاف 50 مل","cat":"m8","sub":"s19"},{"sku":"3654","name":"بوبانا مزيل عرق بالاعشاب 60 مل","cat":"m8","sub":"s19"},{"sku":"3655","name":"بوبانا مزيل عرق بجوز الهند60 مل","cat":"m8","sub":"s19"},{"sku":"3657","name":"بوبانا مزيل عرق بدون رائحه 60 مل","cat":"m8","sub":"s19"},{"sku":"3481","name":"بوبانا مزيل عرق تفتيح آمن 50 مل","cat":"m8","sub":"s19"},{"sku":"3484","name":"بوبانا مزيل عرق تفتيح بدون رائحة 50 مل","cat":"m8","sub":"s19"},{"sku":"3479","name":"بوبانا مزيل عرق كاندي 50 مل","cat":"m8","sub":"s19"},{"sku":"3656","name":"بوبانا مزيل عرق كاندي 60 مل","cat":"m8","sub":"s19"},{"sku":"3482","name":"بوبانا مزيل عرق نعومة فائقة 50 مل","cat":"m8","sub":"s19"},{"sku":"3480","name":"بوبانا مزيل عرق ورود 50 مل","cat":"m8","sub":"s19"},{"sku":"3521","name":"بوبانا معطر أوت أف ذا بلو 250 مل","cat":"m8","sub":"s19"},{"sku":"3522","name":"بوبانا معطر بربل أروما 250 مل","cat":"m8","sub":"s19"},{"sku":"3520","name":"بوبانا معطر بينك أت هارت 250 مل","cat":"m8","sub":"s19"},{"sku":"3524","name":"بوبانا معطر جرين نويز 250 مل","cat":"m8","sub":"s19"},{"sku":"3523","name":"بوبانا معطر جولدن أور 250 مل","cat":"m8","sub":"s19"},{"sku":"3461","name":"بوبانا ملح صنفرة بالتوت 300 جم","cat":"m8","sub":"s19"},{"sku":"3459","name":"بوبانا ملح صنفرة بالحليب 300 جم","cat":"m8","sub":"s19"},{"sku":"3460","name":"بوبانا ملح صنفرة بالزبادي 300 جم","cat":"m8","sub":"s19"},{"sku":"3462","name":"بوبانا ملح صنفرة بالليمون 300 جم","cat":"m8","sub":"s19"},{"sku":"3831","name":"بوبانا چل صنفرة بالرمان انبوبة 150 ملي","cat":"m8","sub":"s19"},{"sku":"3808","name":"بويانا جل واقي الشمس 150 ملي","cat":"m8","sub":"s19"},{"sku":"3807","name":"بويانا لوشن واقي الشمس 150 ملي","cat":"m8","sub":"s19"},{"sku":"3662","name":"غسول بوبانا للجسم برائحة جوز الهند 240 مل","cat":"m8","sub":"s19"},{"sku":"3531","name":"غسول بوبانا للجسم فواكه استوائية 240 مل","cat":"m8","sub":"s19"},{"sku":"3530","name":"غسول بوبانا للجسم ورود برية 240 مل","cat":"m8","sub":"s19"},{"sku":"3509","name":"مرطب شفاه كاكاو وفيتامين","cat":"m8","sub":"s19"},{"sku":"3508","name":"مرطب شفاه كرز وفيتامين","cat":"m8","sub":"s19"},{"sku":"3510","name":"مرطب شفاه كيوي وفيتامين","cat":"m8","sub":"s19"},{"sku":"3511","name":"مرطب شفاه هيالورونيك وفيتامين","cat":"m8","sub":"s19"},{"sku":"3525","name":"بوبانا بديل زيت أرجان 240 مل","cat":"m8","sub":"s20"},{"sku":"3526","name":"بوبانا بديل زيت ثوم أسود 240 مل","cat":"m8","sub":"s20"},{"sku":"3527","name":"بوبانا بديل زيت جوز هند 240 مل","cat":"m8","sub":"s20"},{"sku":"3498","name":"بوبانا بلسم أرجان 400 مل","cat":"m8","sub":"s20"},{"sku":"3500","name":"بوبانا بلسم ثوم أسود 400 مل","cat":"m8","sub":"s20"},{"sku":"3499","name":"بوبانا بلسم جوز هند 400 مل","cat":"m8","sub":"s20"},{"sku":"3507","name":"بوبانا سيرم شعر جوجوبا 100 مل","cat":"m8","sub":"s20"},{"sku":"3528","name":"بوبانا سيروم أرجان 100 مل","cat":"m8","sub":"s20"},{"sku":"3529","name":"بوبانا سيروم جوز هند 100 مل","cat":"m8","sub":"s20"},{"sku":"3495","name":"بوبانا شامبو أرجان 400 مل","cat":"m8","sub":"s20"},{"sku":"3623","name":"بوبانا شامبو بزيت الارجان 400 مل +بلسم 100 مل","cat":"m8","sub":"s20"},{"sku":"3622","name":"بوبانا شامبو بزيت الثوم 400 مل +بلسم 100 مل","cat":"m8","sub":"s20"},{"sku":"3624","name":"بوبانا شامبو بزيت جوز الهند 400 مل +بلسم 100 مل","cat":"m8","sub":"s20"},{"sku":"3497","name":"بوبانا شامبو ثوم أسود 400 مل","cat":"m8","sub":"s20"},{"sku":"3496","name":"بوبانا شامبو جوز هند 400 مل","cat":"m8","sub":"s20"},{"sku":"3660","name":"بوبانا عرض ليف ان كريم بزيت الارجان 200 مللى + شامبو 100 ملي","cat":"m8","sub":"s20"},{"sku":"3661","name":"بوبانا عرض ليف ان كريم بزيت الثوم الاسود 200 مللى + شامبو 100 ملي","cat":"m8","sub":"s20"},{"sku":"3659","name":"بوبانا عرض ليف ان كريم بزيت جوز الهند 200 مللى + شامبو 100 ملي","cat":"m8","sub":"s20"},{"sku":"3653","name":"بوبانا قناع ورقي بالرتينول والافوكاتو","cat":"m8","sub":"s20"},{"sku":"3505","name":"بوبانا ليف ان أرجان 200 مل","cat":"m8","sub":"s20"},{"sku":"3506","name":"بوبانا ليف ان ثوم أسود 200 مل","cat":"m8","sub":"s20"},{"sku":"3504","name":"بوبانا ليف ان جوز هند 200 مل","cat":"m8","sub":"s20"},{"sku":"3501","name":"بوبانا ماسك شعر أرجان 500 مل","cat":"m8","sub":"s20"},{"sku":"3503","name":"بوبانا ماسك شعر ثوم أسود 500 مل","cat":"m8","sub":"s20"},{"sku":"3502","name":"بوبانا ماسك شعر جوز هند 500 مل","cat":"m8","sub":"s20"},{"sku":"3512","name":"زيت بوبانا جاف 100 مل","cat":"m8","sub":"s20"},{"sku":"3513","name":"زيت بوبانا جاف براق 100 مل","cat":"m8","sub":"s20"},{"sku":"2559","name":"اوف سبراى 200مل طارد للناموس","cat":"m9","sub":"s21"},{"sku":"3160","name":"بليدج ايروسول ملمع موبيليا 400 مل طبيعي","cat":"m9","sub":"s21"},{"sku":"2525","name":"جليد اصدار محدود- ايروسول 300مل مانجو عويس","cat":"m9","sub":"s21"},{"sku":"2542","name":"جليد ايروسول معطر جو300مل تفاح بالقرفه","cat":"m9","sub":"s21"},{"sku":"2536","name":"جليد ايروسول معطر جو300مل فخامة العود والعنبر","cat":"m9","sub":"s21"},{"sku":"2550","name":"جليد ايروسول معطر جو300مل لافندر","cat":"m9","sub":"s21"},{"sku":"2540","name":"جليد ايروسول معطر جو300مل نسيم الصباح","cat":"m9","sub":"s21"},{"sku":"2541","name":"جليد ايروسول معطر جو300مل ياسمين","cat":"m9","sub":"s21"},{"sku":"2543","name":"جليد معطر جو سبراي 300مل فانيليا","cat":"m9","sub":"s21"},{"sku":"2523","name":"ريد اقراص طارد للنامس 60 قرص","cat":"m9","sub":"s21"},{"sku":"2516","name":"ريد اكتيف مبيد للحشرات الزاحفه300مل","cat":"m9","sub":"s21"},{"sku":"2560","name":"ريد اكوا اكتيف مبيد للحشرات الطائره 300مل","cat":"m9","sub":"s21"},{"sku":"2522","name":"ريد اكوا اكتيف مبيد للحشرات الطائره 400مل","cat":"m9","sub":"s21"},{"sku":"2508","name":"ريد جهاز كهربائى 300 ساعه","cat":"m9","sub":"s21"},{"sku":"2530","name":"ريد غيار كهربائى 37 ليلة","cat":"m9","sub":"s21"},{"sku":"2561","name":"ريد للحشرات الطائره269مل","cat":"m9","sub":"s21"},{"sku":"2554","name":"ويندكس منظف زجاج 500مل رشاش ازرق","cat":"m9","sub":"s21"},{"sku":"2634","name":"ويندكس منظف زجاج 500مل رشاش لافندر","cat":"m9","sub":"s21"},{"sku":"2633","name":"ويندكس منظف زجاج 500مل رشاش ياسمين","cat":"m9","sub":"s21"},{"sku":"2532","name":"ويندكس منظف زجاج 500مل غيار ازرق","cat":"m9","sub":"s21"},{"sku":"2553","name":"ويندكس منظف زجاج 500مل غيار فندر","cat":"m9","sub":"s21"},{"sku":"2969","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% عود+عبق","cat":"m9","sub":"s22"},{"sku":"2970","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% عود+لافندر","cat":"m9","sub":"s22"},{"sku":"3161","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% فانيليا","cat":"m9","sub":"s22"},{"sku":"3250","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% فخامه العود والعنبر","cat":"m9","sub":"s22"},{"sku":"3251","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% لافندر وفانيليا","cat":"m9","sub":"s22"},{"sku":"2971","name":"جليد غيار اوتوماتيك 269مل 2ق خصم 20% لافندر+عبق","cat":"m9","sub":"s22"},{"sku":"2520","name":"جليد مالتي سبراي 460مل- اكوا","cat":"m9","sub":"s22"},{"sku":"2517","name":"جليد مالتي سبراي 460مل- روز","cat":"m9","sub":"s22"},{"sku":"3873","name":"جليد مالتي سبراي 460مل- سحر العود","cat":"m9","sub":"s22"},{"sku":"3872","name":"جليد مالتي سبراي 460مل- عود ملكي","cat":"m9","sub":"s22"},{"sku":"2518","name":"جليد مالتي سبراي 460مل- لافندر","cat":"m9","sub":"s22"},{"sku":"3086","name":"جليد مالتي سبراي 460مل-بطيخ","cat":"m9","sub":"s22"},{"sku":"3084","name":"جليد مالتي سبراي 460مل-توت","cat":"m9","sub":"s22"},{"sku":"3083","name":"جليد مالتي سبراي 460مل-خوخ","cat":"m9","sub":"s22"},{"sku":"3087","name":"جليد مالتي سبراي 460مل-عطر الشرق","cat":"m9","sub":"s22"},{"sku":"3082","name":"جليد مالتي سبراي 460مل-ليمون وبرتقال","cat":"m9","sub":"s22"},{"sku":"3231","name":"جليد معطر مركز 480 مل انتعاش النظافه","cat":"m9","sub":"s22"},{"sku":"3232","name":"جليد معطر مركز 480 مل خوخ","cat":"m9","sub":"s22"},{"sku":"3230","name":"جليد معطر مركز 480 مل سحر الشرق","cat":"m9","sub":"s22"},{"sku":"3229","name":"جليد معطر مركز 480 مل ليمون","cat":"m9","sub":"s22"},{"sku":"3228","name":"جليد موزع روائح اكوا 100مل","cat":"m9","sub":"s22"},{"sku":"3226","name":"جليد موزع روائح باودر فريش 100مل","cat":"m9","sub":"s22"},{"sku":"3225","name":"جليد موزع روائح عبق الورد والتوت 100مل","cat":"m9","sub":"s22"},{"sku":"3227","name":"جليد موزع روائح لافندر 100مل","cat":"m9","sub":"s22"},{"sku":"2922","name":"جهاز جليد اوتوماتيك عود + 1غيار هديه","cat":"m9","sub":"s22"},{"sku":"2920","name":"جهاز جليد اوتوماتيك فانيلا + 1غيار هديه","cat":"m9","sub":"s22"},{"sku":"2921","name":"جهاز جليد اوتوماتيك ورد وتوت + 1غيار هديه","cat":"m9","sub":"s22"},{"sku":"3700","name":"سباركل 30 شريط مشكل - 2ج","cat":"m10","sub":"s23"},{"sku":"3701","name":"سباركل شامبو للشعر الجاف 110 مل + بلسم 110 مل","cat":"m10","sub":"s23"},{"sku":"3699","name":"سباركل شامبو للشعر العادي 110 مل + بلسم 110 مل","cat":"m10","sub":"s23"},{"sku":"3702","name":"سباركل شامبو للشعر اللامع 110 مل + بلسم 110 مل","cat":"m10","sub":"s23"},{"sku":"3080","name":"شامب سباركل 350 مل بيبي","cat":"m10","sub":"s23"},{"sku":"2901","name":"شامبو سباركل 350 مل جاف","cat":"m10","sub":"s23"},{"sku":"2902","name":"شامبو سباركل 350 مل عادي","cat":"m10","sub":"s23"},{"sku":"3151","name":"شامبو سباركل 350 مل كافين","cat":"m10","sub":"s23"},{"sku":"3153","name":"شامبو سباركل 350 مل لامع","cat":"m10","sub":"s23"},{"sku":"3152","name":"شامبو سباركل 350 مل متقصف","cat":"m10","sub":"s23"},{"sku":"2973","name":"شامبو سباركل 600 مل جاف","cat":"m10","sub":"s23"},{"sku":"3154","name":"شامبو سباركل 600 مل كافين","cat":"m10","sub":"s23"},{"sku":"3156","name":"شامبو سباركل 600 مل لامع","cat":"m10","sub":"s23"},{"sku":"3155","name":"شامبو سباركل 600 مل متقصف","cat":"m10","sub":"s23"},{"sku":"2977","name":"شامبو سيف الحبه السوداء300 مل سباركل","cat":"m10","sub":"s23"},{"sku":"2883","name":"شامبو سيف هير زيتون 300 مل سباركل","cat":"m10","sub":"s23"},{"sku":"3159","name":"شيروزا شامبو بروتين الحرير 170 مل سباركل","cat":"m10","sub":"s23"},{"sku":"3158","name":"شيروزا شامبو بروتين القمح 170 مل سباركل","cat":"m10","sub":"s23"},{"sku":"2884","name":"كرتونه 350 مشكل سباركل","cat":"m10","sub":"s23"},{"sku":"2881","name":"كرتونه 40 شريط مشكل سباركل","cat":"m10","sub":"s23"},{"sku":"2885","name":"كرتونه سباركل 600 مل مشكل سباركل","cat":"m10","sub":"s23"},{"sku":"2976","name":"كرتونه سباركل سيف هير اكياس 20 شريط","cat":"m10","sub":"s23"},{"sku":"3703","name":"كرتونه شيروزا 350 مل متنوع","cat":"m10","sub":"s23"},{"sku":"3704","name":"كرتونه شيروزا 600مل متنوع","cat":"m10","sub":"s23"},{"sku":"3800","name":"سكاي بلسم 900 مل بزيت النعام","cat":"m11","sub":"s24"},{"sku":"1863","name":"سكاي بلسم 900 مل بذبدة الشيا","cat":"m11","sub":"s25"},{"sku":"1861","name":"سكاي بلسم 900 مل بزيت الارجان","cat":"m11","sub":"s25"},{"sku":"1862","name":"سكاي بلسم 900 مل بزيت الجوجوبا","cat":"m11","sub":"s25"},{"sku":"1856","name":"سكاي حمام كريم 1000 مل بزبدة الشيا","cat":"m11","sub":"s26"},{"sku":"1854","name":"سكاي حمام كريم 1000 مل بزيت الارجان","cat":"m11","sub":"s26"},{"sku":"1855","name":"سكاي حمام كريم 1000 مل بزيت الجوجوبا","cat":"m11","sub":"s26"},{"sku":"1857","name":"سكاي حمام كريم 1000 مل بزيت النعام","cat":"m11","sub":"s26"},{"sku":"1860","name":"سكاي شامبو 900 مل بزيت بزبدة الشيا","cat":"m11","sub":"s26"},{"sku":"1890","name":"زيدورا كريم صنفرة بالفحم 300 مل","cat":"m11","sub":"s27"},{"sku":"1889","name":"زيدورا كريم صنفرة بالفراولة 300 مل","cat":"m11","sub":"s27"},{"sku":"1888","name":"زيدورا كريم صنفرة مشمش 300 مل","cat":"m11","sub":"s27"},{"sku":"1883","name":"زيدورا كعب غزال 300 مل","cat":"m11","sub":"s27"},{"sku":"1886","name":"زيدورا ماسك تفتيح البشرة بالخيار 300 مل","cat":"m11","sub":"s27"},{"sku":"1884","name":"زيدورا ماسك تفتيح البشرة حليب 300 مل","cat":"m11","sub":"s27"},{"sku":"3796","name":"سكاي سكن كلينك كريم 150 جرام لترطيب البشره","cat":"m11","sub":"s27"},{"sku":"3797","name":"سكاي سكن كلينك كريم 150 جرام للبشره الجافه والحساسه","cat":"m11","sub":"s27"},{"sku":"3798","name":"سكاي سكن كلينك كريم 150 جرام للبشره الدهنيه والمختلطه","cat":"m11","sub":"s27"},{"sku":"3803","name":"سكاي هيربال كير هير سيرم بخلاصة الزعتر و الافوكادو و ورق الغار","cat":"m11","sub":"s28"},{"sku":"3805","name":"سكاي هيربال كير هير سيرم بخلاصة ماء الارز و القهوة و المورينجا","cat":"m11","sub":"s28"},{"sku":"3804","name":"سكاي هيربال كير هير سيرم بخلاصة نواة التمر و الحنة و الكولاجين","cat":"m11","sub":"s28"},{"sku":"3799","name":"سكاي شامبو 900 جرام بزيت النعام","cat":"m11","sub":"s29"},{"sku":"1858","name":"سكاي شامبو 900 مل بزيت الارجان","cat":"m11","sub":"s29"},{"sku":"1859","name":"سكاي شامبو 900 مل بزيت الجوجوبا","cat":"m11","sub":"s29"},{"sku":"3792","name":"سكاي فور فورا شامبو ضد القشرة 400 مل","cat":"m11","sub":"s29"},{"sku":"1864","name":"سكاي صابون استحمام 1لتر برائحة الزهور البرية","cat":"m11","sub":"s30"},{"sku":"1865","name":"سكاي صابون استحمام 1لتر برائحة الزهور والفواكة","cat":"m11","sub":"s30"},{"sku":"1866","name":"سكاي صابون استحمام 1لتر برائحة العطور الفرنسية","cat":"m11","sub":"s30"},{"sku":"1867","name":"سكاي صابون استحمام 1لتر برائحة الورد","cat":"m11","sub":"s30"},{"sku":"3793","name":"سكاي صابون استحمام 1لتر برائحة روعة الغموض","cat":"m11","sub":"s30"},{"sku":"3794","name":"سكاي صابون استحمام 1لتر برائحة سحر الشرق","cat":"m11","sub":"s30"},{"sku":"1943","name":"سكاي صابزن لليدين 1 لتر magic","cat":"m11","sub":"s31"},{"sku":"1873","name":"سكاي صابون لليدين 1لتر Downpoup","cat":"m11","sub":"s31"},{"sku":"1876","name":"سكاي صابون لليدين 1لتر Scoop","cat":"m11","sub":"s31"},{"sku":"3802","name":"سكاي تصفيف 250 جرام بزيت النعام","cat":"m11","sub":"s32"},{"sku":"1870","name":"سكاي تصفيف 250 مل بزبدة الشيا","cat":"m11","sub":"s32"},{"sku":"1868","name":"سكاي تصفيف 250 مل بزيت الارجان","cat":"m11","sub":"s32"},{"sku":"1869","name":"سكاي تصفيف 250 مل بزيت الجوجوبا","cat":"m11","sub":"s32"},{"sku":"2042","name":"سكاي واكس 140 مل بالارجان","cat":"m11","sub":"s32"},{"sku":"3795","name":"سكاي واكس 140 مل بذبدة الشيا","cat":"m11","sub":"s32"},{"sku":"3777","name":"سكينيفاي بالانس سيروم بالنياسيناميد 10% والزنك 1% للبشرة اللامعة والدهنية 50 مل","cat":"m12","sub":"s33"},{"sku":"3778","name":"سكينيفاي بالانس علاج ما قبل الغسيل لفروة الرأس بحمض الساليسيليك للفروة الدهنية والمثيرة للحكة 100 مل","cat":"m12","sub":"s33"},{"sku":"3779","name":"سكينيفاي برايتن سيروم بحمض الأزيليك 10% للبشرة الحساسة 50 مل","cat":"m12","sub":"s33"},{"sku":"3776","name":"سكينيفاي بلامب سيروم بحمض الهيالورونيك 2% وفيتامين B5 للبشرة الجافة 50 مل","cat":"m12","sub":"s33"},{"sku":"3774","name":"سكينيفاي بلامب محلول بالأرجيريلين 10% ومركب الببتيد للوجه 50 مل","cat":"m12","sub":"s33"},{"sku":"3790","name":"سكينيفاي تريت سيروم للعين بالببتيدات 30 مل","cat":"m12","sub":"s33"},{"sku":"3775","name":"سكينيفاي جلو سيروم مضاد للأكسدة بحمض الأسكوربيك 30% للبشرة الباهتة 50 مل","cat":"m12","sub":"s33"},{"sku":"3788","name":"سكينيفاي جلو محلول تقشير بحمض اللاكتيك 5% وحمض الهيالورونيك 50 مل","cat":"m12","sub":"s33"},{"sku":"3786","name":"سكينيفاي جلو محلول تقشير متعدد الأحماض AHA 30% وBHA 2% 50 مل","cat":"m12","sub":"s33"},{"sku":"3787","name":"سكينيفاي جلو محلول كونتور للعين بالكافيين 5% 30 مل","cat":"m12","sub":"s33"},{"sku":"3785","name":"سكينيفاي فيرم سيروم متعدد الببتيدات للوجه 50 مل","cat":"m12","sub":"s33"},{"sku":"3783","name":"سكينيفاي كلير محلول تقشير بحمض الساليسيليك (BHA) 2% للبشرة الدهنية المعرضة لحب الشباب 50 مل","cat":"m12","sub":"s33"},{"sku":"3780","name":"سكينيفاي كلين غسول للوجه بحمض الأسكوربيك للبشرة الباهتة وغير المتساوية 200 مل","cat":"m12","sub":"s33"},{"sku":"3782","name":"سكينيفاي كلين غسول للوجه بحمض الساليسيليك 2% والزنك للبشرة الدهنية المعرضة لحب الشباب 200 مل","cat":"m12","sub":"s33"},{"sku":"3781","name":"سكينيفاي كلين غسول للوجه بحمض الهيالورونيك للبشرة الجافة 200 مل","cat":"m12","sub":"s33"},{"sku":"3762","name":"سكينيفاي كلين محلول تونر بالنياسيناميد وحمض الجليكوليك 7% 200 مل","cat":"m12","sub":"s33"},{"sku":"3791","name":"سكينيفاي يونج سيروم بالريتينول 0.3% للوجه 50 مل","cat":"m12","sub":"s33"},{"sku":"3769","name":"سكينيفاي بروتكت جل واقي شمس بعامل حماية 50+ للبشرة الدهنية المختلطة 100 مل","cat":"m12","sub":"s34"},{"sku":"3770","name":"سكينيفاي بروتكت كريم واقي شمس بعامل حماية 50+ للبشرة الجافة والعادية 100 مل","cat":"m12","sub":"s34"},{"sku":"3767","name":"سكينيفاي بروتكت كريم واقي شمس ملون بعامل حماية 50+ 100 مل","cat":"m12","sub":"s34"},{"sku":"3768","name":"سكينيفاي بروتكت لوشن واقي شمس للوجه والجسم بعامل حماية 50+ 100 مل","cat":"m12","sub":"s34"},{"sku":"3773","name":"سكينيفاي بيوتيفاي زيت بذور ثمر الورد للوجه والجسم 100 مل","cat":"m12","sub":"s34"},{"sku":"3772","name":"سكينيفاي بيوتيفاي زيت جاف متعدد الزيوت 100 مل","cat":"m12","sub":"s34"},{"sku":"3771","name":"سكينيفاي تريت علاج منشط لفروة الرأس بالكافيين 100 مل","cat":"m12","sub":"s34"},{"sku":"3763","name":"سكينيفاي جلو كريم مضاد للأكسدة بالفيتامينات المتعددة وحمض الأسكوربيك للبشرة الباهتة وغير المتساوية 50 مل","cat":"m12","sub":"s34"},{"sku":"3784","name":"سكينيفاي فيرم سيروم بالماتريكسيل 3% وحمض الهيالورونيك 50 مل","cat":"m12","sub":"s34"},{"sku":"3765","name":"سكينيفاي ماتيفاي كريم خفيف بأحماض الأوميجا الدهنية للبشرة الدهنية 50 مل","cat":"m12","sub":"s34"},{"sku":"3789","name":"سكينيفاي هيدرات سيروم لفروة الرأس بحمض الهيالورونيك وعامل الترطيب الطبيعي 100 مل","cat":"m12","sub":"s34"},{"sku":"3764","name":"سكينيفاي هيدرات كريم مرطب بحمض الهيالورونيك وعامل الترطيب الطبيعي للبشرة الجافة 50 مل","cat":"m12","sub":"s34"},{"sku":"3766","name":"سكينيفاي يونج كريم كونتور للعين بالريتينول 30 مل","cat":"m12","sub":"s34"},{"sku":"2851","name":"جل كريم 225 فائق اللمعان جولد سينور","cat":"m13","sub":"s35"},{"sku":"2847","name":"جيل كريم بزنس مان 200 جم سينور","cat":"m13","sub":"s35"},{"sku":"2899","name":"حمام كريم 500 سينور","cat":"m13","sub":"s35"},{"sku":"2974","name":"زيت شعر 200 جم سينور","cat":"m13","sub":"s35"},{"sku":"3809","name":"سينور كريم صنفره","cat":"m13","sub":"s35"},{"sku":"2880","name":"شامبو 500 جم سينور","cat":"m13","sub":"s35"},{"sku":"2879","name":"شاور جل 450 جم سينور","cat":"m13","sub":"s35"},{"sku":"2878","name":"غسول لليد 550 جم سينور","cat":"m13","sub":"s35"},{"sku":"2850","name":"كريم بشره 120 جم سينور","cat":"m13","sub":"s35"},{"sku":"2842","name":"كريم تصفيف 200 جم سينور","cat":"m13","sub":"s35"},{"sku":"2849","name":"كريم شعر بيوتي 225 جم سينور","cat":"m13","sub":"s35"},{"sku":"2848","name":"كريم شعر لمسه نهائيه 200 جم سينور","cat":"m13","sub":"s35"},{"sku":"2853","name":"كريم لجمال الشعر 225 سينور","cat":"m13","sub":"s35"},{"sku":"2877","name":"ملمع شعر 150 مل (بلمرز ) سينور","cat":"m13","sub":"s35"},{"sku":"2844","name":"ميجا جل 250جم سينور","cat":"m13","sub":"s35"},{"sku":"2900","name":"هير فود بالزيوت الطبيعيه 225 سينور","cat":"m13","sub":"s35"},{"sku":"3081","name":"واكس فائق اللمعان 100جم ابيض سينور","cat":"m13","sub":"s35"},{"sku":"2846","name":"واكس فائق اللمعان 100جم اسود سينور","cat":"m13","sub":"s35"},{"sku":"3433","name":"فرشة د- برش بيانو سوفت 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3434","name":"فرشة د- برش بيانو ميديام 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3435","name":"فرشة د- برش بيانو هارد 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3436","name":"فرشة د- برش تاتش سوفت 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3437","name":"فرشة د- برش تاتش ميديام 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3438","name":"فرشة د- برش تاتش هارد 2لون كبار","cat":"m14","sub":"s36"},{"sku":"3441","name":"فرشة د- برش ذره","cat":"m14","sub":"s36"},{"sku":"3430","name":"فرشة د- برش سوفت","cat":"m14","sub":"s36"},{"sku":"3440","name":"فرشة د- برش فحم","cat":"m14","sub":"s36"},{"sku":"3444","name":"فرشة د- برش كلاسيك سوفت","cat":"m14","sub":"s36"},{"sku":"3445","name":"فرشة د- برش كلاسيك ميديام","cat":"m14","sub":"s36"},{"sku":"3446","name":"فرشة د- برش كلاسيك هارد","cat":"m14","sub":"s36"},{"sku":"3431","name":"فرشة د- برش ميديام","cat":"m14","sub":"s36"},{"sku":"3432","name":"فرشة د- برش هارد","cat":"m14","sub":"s36"},{"sku":"3209","name":"ستاند صبغه سي كالر","cat":"m15","sub":"s37"},{"sku":"3208","name":"شنتيون صبغة سي كالر","cat":"m15","sub":"s37"},{"sku":"3191","name":"صبغه سي كالر رقم 1","cat":"m15","sub":"s37"},{"sku":"3192","name":"صبغه سي كالر رقم 1.1","cat":"m15","sub":"s37"},{"sku":"3206","name":"صبغه سي كالر رقم 55.46","cat":"m15","sub":"s37"},{"sku":"3198","name":"صبغه سي كالر رقم 6","cat":"m15","sub":"s37"},{"sku":"3196","name":"صبغه سي كالر رقم 6.1","cat":"m15","sub":"s37"},{"sku":"3200","name":"صبغه سي كالر رقم 7","cat":"m15","sub":"s37"},{"sku":"3197","name":"صبغه سي كالر رقم 7.1","cat":"m15","sub":"s37"},{"sku":"3194","name":"صبغه سي كالر رقم 7.11","cat":"m15","sub":"s37"},{"sku":"3204","name":"صبغه سي كالر رقم 7.3","cat":"m15","sub":"s37"},{"sku":"3201","name":"صبغه سي كالر رقم 8","cat":"m15","sub":"s37"},{"sku":"3199","name":"صبغه سي كالر رقم 8.1","cat":"m15","sub":"s37"},{"sku":"3195","name":"صبغه سي كالر رقم 8.11","cat":"m15","sub":"s37"},{"sku":"3203","name":"صبغه سي كالر رقم 8.3","cat":"m15","sub":"s37"},{"sku":"3711","name":"شمع رول نيوم اصفر","cat":"m16","sub":"s38"},{"sku":"3712","name":"شمع رول نيوم روز","cat":"m16","sub":"s38"},{"sku":"3713","name":"مثبت شعر نيوم","cat":"m16","sub":"s38"},{"sku":"190","name":"بديل زيت الفيف ارجانين 300 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"189","name":"بديل زيت الفيف بالزيوت 300 مل عرض 15%خصم","cat":"m17","sub":"s39"},{"sku":"192","name":"بديل زيت الفيف توتال ريبير 5 300 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"106","name":"بلسم الفيف ارجانين 200 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"26","name":"بلسم الفيف توتال ريبير 5 200 مل","cat":"m17","sub":"s39"},{"sku":"28","name":"بلسم الفيف جاف 200 مل","cat":"m17","sub":"s39"},{"sku":"278","name":"بلسم الفيف جاف 200 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3224","name":"بلسم الفيف جلايكوليك 360 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"2940","name":"بلسم الفيف جليكوليك 200 مل","cat":"m17","sub":"s39"},{"sku":"29","name":"بلسم الفيف كرياتين 200 مل","cat":"m17","sub":"s39"},{"sku":"3144","name":"بلسم الفيف كرياتين 360 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3709","name":"بلسم الفيف كولاجين 200 مل","cat":"m17","sub":"s39"},{"sku":"2576","name":"بلسم الفيف هيالورون بيور 200مل","cat":"m17","sub":"s39"},{"sku":"3647","name":"بلسم الفيف هيالورون للشعر فاقد الترطيب 200مل خصم 15%","cat":"m17","sub":"s39"},{"sku":"3145","name":"بلسم الفيف هيلارون 360 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"448","name":"حمام كريم الفيف ارجانين 300 مل","cat":"m17","sub":"s39"},{"sku":"450","name":"حمام كريم الفيف بالزيوت 300 مل","cat":"m17","sub":"s39"},{"sku":"479","name":"حمام كريم الفيف دريم لونج 300 مل","cat":"m17","sub":"s39"},{"sku":"1785","name":"سبراى سيرم الفيف هيالورون للشعر 150مل","cat":"m17","sub":"s39"},{"sku":"2927","name":"سيرم الفيف 100 مل بزيت الكاميليا","cat":"m17","sub":"s39"},{"sku":"2578","name":"سيرم الفيف ارجانين للشعر الضعيف و المتساقط 102 مل","cat":"m17","sub":"s39"},{"sku":"1660","name":"سيرم الفيف طول الاحلام بروكيراتين للشعر الطويل و المجعد 100مل","cat":"m17","sub":"s39"},{"sku":"148","name":"سيرم الفيف لجميع انواع الشعر بالزيوت 100 مل","cat":"m17","sub":"s39"},{"sku":"2821","name":"سيروم الفيف لفروة لرأس الدهنية هيالورون بيور 102 مل","cat":"m17","sub":"s39"},{"sku":"101","name":"شامبو الفيف 200 مل ارجانين عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3254","name":"شامبو الفيف 200 مل جلايكوليك عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3252","name":"شامبو الفيف 200 مل هيلارون عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"309","name":"شامبو الفيف ارجانين 400 مل عرض 20% خصم","cat":"m17","sub":"s39"},{"sku":"146","name":"شامبو الفيف بالزيوت بدون سلفات 400 مل","cat":"m17","sub":"s39"},{"sku":"277","name":"شامبو الفيف توتال ريبير 200 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"310","name":"شامبو الفيف توتال ريبير 5 400 مل عرض 20% خصم","cat":"m17","sub":"s39"},{"sku":"311","name":"شامبو الفيف جاف 400 مل عرض 20% خصم","cat":"m17","sub":"s39"},{"sku":"154","name":"شامبو الفيف جاف جدا 200 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"312","name":"شامبو الفيف جاف جدا 400 مل عرض 20% خصم","cat":"m17","sub":"s39"},{"sku":"1208","name":"شامبو الفيف جاف جدا 600 مل","cat":"m17","sub":"s39"},{"sku":"2733","name":"شامبو الفيف جاف جدا 600 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3233","name":"شامبو الفيف جليكوليك 400 مل خصم 20%","cat":"m17","sub":"s39"},{"sku":"3823","name":"شامبو الفيف جليكوليك 600 مل خصم 15%","cat":"m17","sub":"s39"},{"sku":"155","name":"شامبو الفيف كرياتين 200 مل عرض 15% خصم","cat":"m17","sub":"s39"},{"sku":"3706","name":"شامبو الفيف كولاجين 200 مل","cat":"m17","sub":"s39"},{"sku":"3707","name":"شامبو الفيف كولاجين 400مل","cat":"m17","sub":"s39"},{"sku":"3708","name":"شامبو الفيف كولاجين 600مل","cat":"m17","sub":"s39"},{"sku":"3825","name":"شامبو الفيف هيالورون 600مل خصم 15%","cat":"m17","sub":"s39"},{"sku":"1749","name":"شامبو الفيف هيالورون للشعر فاقد الترطيب 200مل","cat":"m17","sub":"s39"},{"sku":"1753","name":"شامبو الفيف هيالورون للشعر فاقد الترطيب 600مل","cat":"m17","sub":"s39"},{"sku":"1319","name":"كريم معالج ارجانين 200 مل","cat":"m17","sub":"s39"},{"sku":"1786","name":"كريم معالج الفيف هيالورون للشعر 200 مل","cat":"m17","sub":"s39"},{"sku":"2063","name":"كريم معالج بالزيوت 200 مل","cat":"m17","sub":"s39"},{"sku":"2942","name":"كريم معالج جليكوليك 200 مل","cat":"m17","sub":"s39"},{"sku":"771","name":"جارينية قناع ورقي للوجه - بخلاصة الطحالب السمراء و حمض الهيالورنيك لجميع انواع البشرة","cat":"m17","sub":"s40"},{"sku":"2038","name":"جلايكولك سيرم للبشرة 30 مل","cat":"m17","sub":"s41"},{"sku":"2407","name":"جلايكولك سيرم للعين 20 مل","cat":"m17","sub":"s41"},{"sku":"2040","name":"جلايكولك كريم ليل 50 مل","cat":"m17","sub":"s41"},{"sku":"2039","name":"جلايكولك كريم نهار 50 مل","cat":"m17","sub":"s41"},{"sku":"295","name":"صبغة اكسلانس رقم 1 عرض 15% خصم","cat":"m17","sub":"s42"},{"sku":"125","name":"صبغة اكسلانس رقم 3 عرض 15% خصم","cat":"m17","sub":"s42"},{"sku":"2944","name":"صبغة اكسلانس رقم 7.12 عرض خصم 15%","cat":"m17","sub":"s42"},{"sku":"151","name":"صبغة اكسلانس رقم 8 عرض 15% خصم","cat":"m17","sub":"s42"},{"sku":"124","name":"صبغة اكسلانس رقم 8.1 عرض 15% خصم","cat":"m17","sub":"s42"},{"sku":"2946","name":"صبغة اكسلانس رقم 8.12 عرض خصم15%","cat":"m17","sub":"s42"},{"sku":"211","name":"صبغة اكسلانس رقم 9.1 عرض 15% خصم","cat":"m17","sub":"s42"},{"sku":"2947","name":"صبغة اكسلانس رقم 9.12 عرض خصم15%","cat":"m17","sub":"s42"},{"sku":"109","name":"صبغة غارنييه كالور ناتشونالز رقم 1 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"2959","name":"صبغة غارنييه كالور ناتشونالز رقم 2.10 خصم 15%","cat":"m17","sub":"s43"},{"sku":"232","name":"صبغة غارنييه كالور ناتشونالز رقم 3 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"234","name":"صبغة غارنييه كالور ناتشونالز رقم 4 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"235","name":"صبغة غارنييه كالور ناتشونالز رقم 5 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"237","name":"صبغة غارنييه كالور ناتشونالز رقم 6 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"1825","name":"صبغة غارنييه كالور ناتشونالز رقم 6.1 خصم 15%","cat":"m17","sub":"s43"},{"sku":"238","name":"صبغة غارنييه كالور ناتشونالز رقم 6.1 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"2960","name":"صبغة غارنييه كالور ناتشونالز رقم 6.60 خصم 15%","cat":"m17","sub":"s43"},{"sku":"283","name":"صبغة غارنييه كالور ناتشونالز رقم 6.7 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"176","name":"صبغة غارنييه كالور ناتشونالز رقم 7.1","cat":"m17","sub":"s43"},{"sku":"1823","name":"صبغة غارنييه كالور ناتشونالز رقم 7.1 خصم 15%","cat":"m17","sub":"s43"},{"sku":"243","name":"صبغة غارنييه كالور ناتشونالز رقم 7.1 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"2949","name":"صبغة غارنييه كالور ناتشونالز رقم 8 خصم 15%","cat":"m17","sub":"s43"},{"sku":"244","name":"صبغة غارنييه كالور ناتشونالز رقم 8 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"1826","name":"صبغة غارنييه كالور ناتشونالز رقم 8.1 خصم 15%","cat":"m17","sub":"s43"},{"sku":"113","name":"صبغة غارنييه كالور ناتشونالز رقم 8.1 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"2958","name":"صبغة غارنييه كالور ناتشونالز رقم 9.1 خصم 15%","cat":"m17","sub":"s43"},{"sku":"245","name":"صبغة غارنييه كالور ناتشونالز رقم 9.1 عرض 20% خصم","cat":"m17","sub":"s43"},{"sku":"84","name":"صبغة كاستينج رقم 200","cat":"m17","sub":"s44"},{"sku":"85","name":"صبغة كاستينج رقم 300","cat":"m17","sub":"s44"},{"sku":"88","name":"صبغة كاستينج رقم 400","cat":"m17","sub":"s44"},{"sku":"89","name":"صبغة كاستينج رقم 500","cat":"m17","sub":"s44"},{"sku":"90","name":"صبغة كاستينج رقم 513","cat":"m17","sub":"s44"},{"sku":"82","name":"صبغة كاستينج رقم 535","cat":"m17","sub":"s44"},{"sku":"93","name":"صبغة كاستينج رقم 700","cat":"m17","sub":"s44"},{"sku":"94","name":"صبغة كاستينج رقم 810","cat":"m17","sub":"s44"},{"sku":"1","name":"صبغة برودجى رقم 1","cat":"m17","sub":"s45"},{"sku":"2487","name":"صبغة برودجى رقم 10.1","cat":"m17","sub":"s45"},{"sku":"2486","name":"صبغة برودجى رقم 2.10","cat":"m17","sub":"s45"},{"sku":"96","name":"صبغة برودجى رقم 3","cat":"m17","sub":"s45"},{"sku":"3","name":"صبغة برودجى رقم 4","cat":"m17","sub":"s45"},{"sku":"4","name":"صبغة برودجى رقم 4.15","cat":"m17","sub":"s45"},{"sku":"766","name":"صبغة برودجى رقم 5","cat":"m17","sub":"s45"},{"sku":"5","name":"صبغة برودجى رقم 5.3","cat":"m17","sub":"s45"},{"sku":"6","name":"صبغة برودجى رقم 6","cat":"m17","sub":"s45"},{"sku":"7","name":"صبغة برودجى رقم 6.32","cat":"m17","sub":"s45"},{"sku":"208","name":"صبغة برودجى رقم 6.6","cat":"m17","sub":"s45"},{"sku":"2","name":"صبغة برودجى رقم 7","cat":"m17","sub":"s45"},{"sku":"8","name":"صبغة برودجى رقم 7.1","cat":"m17","sub":"s45"},{"sku":"280","name":"صبغة برودجى رقم 8","cat":"m17","sub":"s45"},{"sku":"9","name":"صبغة برودجى رقم 8.1","cat":"m17","sub":"s45"},{"sku":"3429","name":"سيرم جارنيية تفتيح للوجه بفياتمين سي 30مل خصم20%","cat":"m17","sub":"s46"},{"sku":"2494","name":"غارنية سيرم فاست كلير30مل","cat":"m17","sub":"s46"},{"sku":"3031","name":"غارنية فاست كلير غسول 250 مل للحبوب","cat":"m17","sub":"s46"},{"sku":"2492","name":"غارنية فاست كلير غسول مقشر يومي150مل","cat":"m17","sub":"s46"},{"sku":"3032","name":"غارنية لاصقات حب الشباب غير مرئية","cat":"m17","sub":"s46"},{"sku":"516","name":"غارنييه فاست برايت غسول للبشرة 100مل","cat":"m17","sub":"s47"},{"sku":"515","name":"غارنييه فاست برايت غسول للبشرة 50 مل","cat":"m17","sub":"s47"},{"sku":"514","name":"غارنييه فاست برايت كريم نهار 50 مل","cat":"m17","sub":"s47"},{"sku":"1772","name":"فاست برايت غسول جل منقي للوجه 400 مل","cat":"m17","sub":"s47"},{"sku":"206","name":"كلاى غسول بالطحالب الحمراء 150 مل","cat":"m17","sub":"s48"},{"sku":"207","name":"كلاى غسول بزهرة الاوكاليبتوس 150 مل اخضر","cat":"m17","sub":"s48"},{"sku":"1702","name":"جارنيية مياه ميسلار منظف بفيتامين سى 100 مل","cat":"m17","sub":"s49"},{"sku":"3235","name":"جارنيية مياه ميسلار منظف بفيتامين سى 100 مل خصم 15%","cat":"m17","sub":"s49"},{"sku":"1703","name":"جارنيية مياه ميسلار منظف بفيتامين سى 400 مل","cat":"m17","sub":"s49"},{"sku":"44","name":"جارنييه مياة ميسلار ووتر 400 مل","cat":"m17","sub":"s49"},{"sku":"3236","name":"غارنيية مياه ميسلار الزيوت منظف 100 مل خصم 15%","cat":"m17","sub":"s49"},{"sku":"1061","name":"غارنيية مياه ميسلار الزيوت منظف 400 مل","cat":"m17","sub":"s49"},{"sku":"2943","name":"لوريال مياة ميسلار ووتر 400 مل 3*1","cat":"m17","sub":"s49"},{"sku":"2936","name":"ماء ميسلار غارنييه مع حمض الساليسيليك للبشرة المعرضة للحبوب 400 مل","cat":"m17","sub":"s49"},{"sku":"1217","name":"كريم هيالورون اكسبيرت للعين 15 مل","cat":"m17","sub":"s50"},{"sku":"1216","name":"كريم هيالورون اكسبيرت ليل50 مل","cat":"m17","sub":"s50"},{"sku":"1215","name":"كريم هيالورون اكسبيرت نهار 50 مل","cat":"m17","sub":"s50"},{"sku":"1771","name":"هيالورون اكسبيرت سيرم للوجه 15 مل","cat":"m17","sub":"s50"},{"sku":"1656","name":"هيالورون اكسيبرت سيرم للوجه 30مل","cat":"m17","sub":"s50"},{"sku":"1658","name":"هيالورون اكسيبرت غسول جل 200مل","cat":"m17","sub":"s50"},{"sku":"2067","name":"هيالورون كريم جل للبشرة الدهنية 50 مل","cat":"m17","sub":"s50"},{"sku":"3842","name":"اسبلاش 250 مل - بلاك اكس","cat":"m18","sub":"s51"},{"sku":"3869","name":"اسبلاش 250 مل - 212 مان","cat":"m18","sub":"s52"},{"sku":"3834","name":"اسبلاش 250 مل - اسد","cat":"m18","sub":"s52"},{"sku":"3867","name":"اسبلاش 250 مل - اكوا دي جي","cat":"m18","sub":"s52"},{"sku":"3868","name":"اسبلاش 250 مل - بكرات روج","cat":"m18","sub":"s52"},{"sku":"3844","name":"اسبلاش 250 مل - بوص رجالي","cat":"m18","sub":"s52"},{"sku":"3843","name":"اسبلاش 250 مل - تومي","cat":"m18","sub":"s52"},{"sku":"3838","name":"اسبلاش 250 مل - دان","cat":"m18","sub":"s52"},{"sku":"3849","name":"اسبلاش 250 مل - ستروبري كيك","cat":"m18","sub":"s52"},{"sku":"3832","name":"اسبلاش 250 مل - سوفاج","cat":"m18","sub":"s52"},{"sku":"3847","name":"اسبلاش 250 مل - سيلفر سنت","cat":"m18","sub":"s52"},{"sku":"3841","name":"اسبلاش 250 مل - شانيل","cat":"m18","sub":"s52"},{"sku":"3837","name":"اسبلاش 250 مل - شوجر","cat":"m18","sub":"s52"},{"sku":"3845","name":"اسبلاش 250 مل - فانيلا ايس كريم","cat":"m18","sub":"s52"},{"sku":"3839","name":"اسبلاش 250 مل - فانيلا كيك","cat":"m18","sub":"s52"},{"sku":"3840","name":"اسبلاش 250 مل - مارشميلو","cat":"m18","sub":"s52"},{"sku":"3846","name":"اسبلاش 250 مل - مسك خمره","cat":"m18","sub":"s52"},{"sku":"3835","name":"اسبلاش 250 مل - هير","cat":"m18","sub":"s52"},{"sku":"3836","name":"اسبلاش 250 مل - وايت","cat":"m18","sub":"s52"},{"sku":"3833","name":"اسبلاش 250 مل - يارا","cat":"m18","sub":"s52"},{"sku":"3848","name":"اسبلاش 250 مل - يارا لطافه","cat":"m18","sub":"s52"},{"sku":"3865","name":"ستاند برفان ME اطفال 25 مل","cat":"m18","sub":"s52"},{"sku":"3864","name":"ستاند برفان ME حريمي 25 مل","cat":"m18","sub":"s52"},{"sku":"3866","name":"ستاند برفان ME رجالي25 مل","cat":"m18","sub":"s52"},{"sku":"3851","name":"معطر جو ME - ارابيسك","cat":"m18","sub":"s52"},{"sku":"3852","name":"معطر جو ME - العود الملكي","cat":"m18","sub":"s52"},{"sku":"3863","name":"معطر جو ME - الياسمين","cat":"m18","sub":"s52"},{"sku":"3862","name":"معطر جو ME - الياسمين والورد البلدي","cat":"m18","sub":"s52"},{"sku":"3859","name":"معطر جو ME - بلاك","cat":"m18","sub":"s52"},{"sku":"3850","name":"معطر جو ME - بهجه","cat":"m18","sub":"s52"},{"sku":"3853","name":"معطر جو ME - تشيز كيك","cat":"m18","sub":"s52"},{"sku":"3854","name":"معطر جو ME - توت بري","cat":"m18","sub":"s52"},{"sku":"3855","name":"معطر جو ME - خمره","cat":"m18","sub":"s52"},{"sku":"3856","name":"معطر جو ME - خوخ","cat":"m18","sub":"s52"},{"sku":"3857","name":"معطر جو ME - دان","cat":"m18","sub":"s52"},{"sku":"3860","name":"معطر جو ME - عود بوكيه","cat":"m18","sub":"s52"},{"sku":"3858","name":"معطر جو ME - فل","cat":"m18","sub":"s52"},{"sku":"3861","name":"معطر جو ME - يارا","cat":"m18","sub":"s52"},{"sku":"3270","name":"جل شعر مظهر اكسترا مظهر قوي 250مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3267","name":"جل شعر مظهر اكسترا مظهر قوي 500مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3268","name":"جل شعر مظهر رطب 250 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3265","name":"جل شعر مظهر رطب 500مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3269","name":"جل شعر مظهر قوي 250 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3266","name":"جل شعر مظهر قوي 500مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3271","name":"كريم تصفيف 250 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3262","name":"هير فود بزبده الشيا 200 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3263","name":"هير فود بزبده جوز هند 200 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3264","name":"هير فود بزبده زيت طبيعي 200 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3272","name":"هيرفود فيتامين A-D-E-+بروتين 200 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3274","name":"واكس تصفيف سبايدر 150 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3273","name":"واكس تصفيف فايبر 150 مل انيرجي","cat":"m19","sub":"s53"},{"sku":"3669","name":"ديزار رول اون مزيل للعرق بفيتامين سي وحمض الهيالرون 50 مل","cat":"m19","sub":"s54"},{"sku":"3664","name":"ديزار سيرم تفتيح للوجه بفيتامين سي وحمض الهيالرون 30 مل","cat":"m19","sub":"s54"},{"sku":"3671","name":"ديزار غسول فوم للوجه لإزالة المكياج 150 مل","cat":"m19","sub":"s54"},{"sku":"3666","name":"ديزار غسول لتفتيح الوجه بفيتامين سي 100 مل","cat":"m19","sub":"s54"},{"sku":"3670","name":"ديزار كريم أساس برونز ضد اشعه الشمس +spf 50","cat":"m19","sub":"s54"},{"sku":"3663","name":"ديزار كريم تفتيح للعين بفيتامين سي وحمض الهيالرون 25 مل","cat":"m19","sub":"s54"},{"sku":"3715","name":"ديزار كريم للتفتيح بالفيتامين سي 50 جم","cat":"m19","sub":"s54"},{"sku":"3667","name":"ديزار ماسك لتفتيح العين بفيتامين سي 1.5ml * 60 مل","cat":"m19","sub":"s54"},{"sku":"3668","name":"ديزاركريم أساس سائل لتفتيح الوجه بفيتامين سي وحمض الهيالرون 45 مل","cat":"m19","sub":"s54"},{"sku":"3315","name":"بلسم بزبده الشيا والمانجو والكاكا 355 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3673","name":"بلسم للشعر الكيرلي 355 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3310","name":"حمام كريم بالكرياتين 470 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3311","name":"حمام كريم بزبده الشيا والمانجو والكاكاو 470 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3674","name":"حمام كريم للشعر الكيرلي 470 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3308","name":"سيرم شعر بالكرياتين 148 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3309","name":"سيرم شعر بزبده الشيا والمانجو والكاكاو 148 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3675","name":"سيرم للشعر الكيرلي 148 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3312","name":"شامبو بالكريايتن 355 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3313","name":"شامبو بزبده الشيا والمانجو والكاكا 355 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3672","name":"شامبو للشعر الكيرلي 355 مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3676","name":"كريم كيرلي بزبدة الشيا 250مل زيرو فريز","cat":"m19","sub":"s55"},{"sku":"3723","name":"ستاركين بلسم بخلاصة زيت الأرجان المغربي 500 مل","cat":"m19","sub":"s56"},{"sku":"3722","name":"ستاركين شامبو بخلاصة زيت الأرجان المغربي 500 مل","cat":"m19","sub":"s56"},{"sku":"3281","name":"مقشر الوجه والجسم البحر الميت ستاركين","cat":"m19","sub":"s56"},{"sku":"3280","name":"مقشر الوجه والجسم بافحم ستاركين","cat":"m19","sub":"s56"},{"sku":"3279","name":"مقشر الوجه والجسم باقهوه والجوز ستاركين","cat":"m19","sub":"s56"},{"sku":"3718","name":"مقشر الوجه والجسم بالجوز 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3716","name":"مقشر الوجه والجسم بالذهب 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3284","name":"مقشر الوجه والجسم بالصبار ستاركين","cat":"m19","sub":"s56"},{"sku":"3721","name":"مقشر الوجه والجسم بالفحم 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3717","name":"مقشر الوجه والجسم بالفراوله 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3278","name":"مقشر الوجه والجسم بالفراوله ستاركين","cat":"m19","sub":"s56"},{"sku":"3275","name":"مقشر الوجه والجسم باللوز ستاركين","cat":"m19","sub":"s56"},{"sku":"3277","name":"مقشر الوجه والجسم بالمشمش والمددرين ستاركين","cat":"m19","sub":"s56"},{"sku":"3719","name":"مقشر الوجه والجسم بخشب الصندل 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3282","name":"مقشر الوجه والجسم بزبده الشيا ستاركين","cat":"m19","sub":"s56"},{"sku":"3276","name":"مقشر الوجه والجسم جولد ستاركين","cat":"m19","sub":"s56"},{"sku":"3283","name":"مقشر الوجه والجسم كولاجين ستاركين","cat":"m19","sub":"s56"},{"sku":"3720","name":"مقشر قناع الذهب 300 مل ناتشرز باونتي","cat":"m19","sub":"s56"},{"sku":"3285","name":"سيرم شعر 150 مل يارا","cat":"m19","sub":"s57"},{"sku":"3300","name":"شاور جل بالرمان 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3305","name":"شاور جل بالرمان 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3299","name":"شاور جل بالزهور 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3294","name":"شاور جل بالزهور 250 مل يارا","cat":"m19","sub":"s57"},{"sku":"3304","name":"شاور جل بالزهور 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3301","name":"شاور جل بنسيم البحر 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3295","name":"شاور جل بنسيم البحر 250 مل يارا","cat":"m19","sub":"s57"},{"sku":"3306","name":"شاور جل بنسيم البحر 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3298","name":"شاور جل جوز الهند 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3293","name":"شاور جل جوز الهند 250 مل يارا","cat":"m19","sub":"s57"},{"sku":"3303","name":"شاور جل جوز الهند 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3297","name":"شاور جل خوخ 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3292","name":"شاور جل خوخ 250 مل يارا","cat":"m19","sub":"s57"},{"sku":"3302","name":"شاور جل خوخ 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3296","name":"شاور جل كاندي 1 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3677","name":"شاور جل كاندي 250 مل يارا","cat":"m19","sub":"s57"},{"sku":"3307","name":"شاور جل كاندي 3 لتر يارا","cat":"m19","sub":"s57"},{"sku":"3289","name":"غسول يد بالافندر يارا","cat":"m19","sub":"s57"},{"sku":"3288","name":"غسول يد بالتوت يارا","cat":"m19","sub":"s57"},{"sku":"3287","name":"غسول يد بالزهور يارا","cat":"m19","sub":"s57"},{"sku":"3291","name":"غسول يد بالصبار يارا","cat":"m19","sub":"s57"},{"sku":"3290","name":"غسول يد بالفانيليا يارا","cat":"m19","sub":"s57"},{"sku":"3286","name":"غسول يد نسيم البحر يارا","cat":"m19","sub":"s57"},{"sku":"3562","name":"جنرال معطر ارضيات مائي تفاح 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3559","name":"جنرال معطر ارضيات مائي تفاح 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3563","name":"جنرال معطر ارضيات مائي توت 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3555","name":"جنرال معطر ارضيات مائي توت 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3564","name":"جنرال معطر ارضيات مائي خوخ 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3556","name":"جنرال معطر ارضيات مائي خوخ 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3565","name":"جنرال معطر ارضيات مائي عود 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3557","name":"جنرال معطر ارضيات مائي عود 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3566","name":"جنرال معطر ارضيات مائي ليمون 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3558","name":"جنرال معطر ارضيات مائي ليمون 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3561","name":"جنرال معطر ارضيات مائي ياسمين 1 لتر (30) ميلفا","cat":"m20","sub":"s58"},{"sku":"3560","name":"جنرال معطر ارضيات مائي ياسمين 1 لتر (40) ميلفا","cat":"m20","sub":"s58"},{"sku":"3532","name":"شاور جل ميلفا اوشن بريز فرنسي 1 لتر","cat":"m20","sub":"s58"},{"sku":"3533","name":"شاور جل ميلفا بينك مراكل فرنسي 1 لتر","cat":"m20","sub":"s58"},{"sku":"3539","name":"شاور جل ميلفا بينك مراكل فرنسي 2 لتر","cat":"m20","sub":"s58"},{"sku":"3540","name":"شاور جل ميلفا جوسي 2 لتر","cat":"m20","sub":"s58"},{"sku":"3535","name":"شاور جل ميلفا سيلكي تاتش فرنسي 1 لتر","cat":"m20","sub":"s58"},{"sku":"3536","name":"شاور جل ميلفا عود ملكي 1 لتر","cat":"m20","sub":"s58"},{"sku":"3541","name":"شاور جل ميلفا عود ملكي 2 لتر","cat":"m20","sub":"s58"},{"sku":"3537","name":"شاور جل ميلفا كادلز فرنسي 1 لتر","cat":"m20","sub":"s58"},{"sku":"3542","name":"شاور جل ميلفا كادلز فرنسي 2 لتر","cat":"m20","sub":"s58"},{"sku":"3568","name":"صابون سائل ايدي ميلفا اكسترا فروت 500 مل ميلفا","cat":"m20","sub":"s58"},{"sku":"3570","name":"صابون سائل ايدي ميلفا جوز هند 500 مل ميلفا","cat":"m20","sub":"s58"},{"sku":"3567","name":"صابون سائل ايدي ميلفا لوز كريمي 500 مل ميلفا","cat":"m20","sub":"s58"},{"sku":"3572","name":"صابون سائل للايدي تفاح 500 مل شفاف ميلفا","cat":"m20","sub":"s58"},{"sku":"3573","name":"صابون سائل للايدي عود 500 مل شفاف ميلفا","cat":"m20","sub":"s58"},{"sku":"3574","name":"صابون سائل للايدي كايرو 500 مل شفاف ميلفا","cat":"m20","sub":"s58"},{"sku":"3575","name":"صابون سائل للايدي لافندر 500 مل شفاف ميلفا","cat":"m20","sub":"s58"},{"sku":"3549","name":"معطر جو جنرال ياسمين 460 مل ميلفا","cat":"m20","sub":"s58"},{"sku":"3543","name":"معطر جو ميلفا بلاك ايس 400 مللي","cat":"m20","sub":"s58"},{"sku":"3544","name":"معطر جو ميلفا توت 400 مللي","cat":"m20","sub":"s58"},{"sku":"3548","name":"معطر جو ميلفا ورد طائفي 400 مللي","cat":"m20","sub":"s58"},{"sku":"3582","name":"منعم ملابس سوفت تاتش ازرق 3 لتر ميلفا","cat":"m20","sub":"s58"},{"sku":"3578","name":"منعم ملابس سوفت تاتش وردي 1 لتر ميلفا","cat":"m20","sub":"s58"},{"sku":"3581","name":"منعم ملابس سوفت تاتش وردي 3 لتر ميلفا","cat":"m20","sub":"s58"},{"sku":"1994","name":"رويال بودرةتفتيح 40 جرام","cat":"m21","sub":"s59"},{"sku":"2741","name":"شامبو منك 700 جوز هند","cat":"m21","sub":"s60"},{"sku":"3338","name":"نيفيا سوفت 100 مل خصم 30 %","cat":"m22","sub":"s61"},{"sku":"2898","name":"كريم نيفيا سوفت 20 مل خصم 30%","cat":"m22","sub":"s62"},{"sku":"1838","name":"نيفيا سوفت 50 مل زبدة كاكاو","cat":"m22","sub":"s62"},{"sku":"1837","name":"نيفيا سوفت 50 مل فيرنس","cat":"m22","sub":"s62"},{"sku":"1841","name":"غسول وجه نيفيا 100 مل","cat":"m22","sub":"s63"},{"sku":"3327","name":"سبراي بلاك اند وايت رجالي 150 مل خصم 25%","cat":"m22","sub":"s64"},{"sku":"1058","name":"كريم نيفيا 30 جم","cat":"m22","sub":"s64"},{"sku":"1059","name":"كريم نيفيا 60 جم","cat":"m22","sub":"s64"},{"sku":"3612","name":"كريم نيفيا سوفت 200 مل خصم 30%","cat":"m22","sub":"s64"},{"sku":"2140","name":"نيفيا سوفت 50 ملى خصم 30%","cat":"m22","sub":"s64"},{"sku":"2049","name":"ماء ميسلار نيفيا 400 مل","cat":"m22","sub":"s65"},{"sku":"209","name":"اسبراى نيفيا مشكل 150 مل","cat":"m22","sub":"s66"},{"sku":"3336","name":"رول اون بلاك اند وايت سموث حريمي 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3324","name":"رول اون بلاك ديب رجالي 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3334","name":"رول اون بيرل اند بيوتي 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3724","name":"رول اون بيرل اند بيوتي فاين 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3326","name":"رول اون حريمي بلاك 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3340","name":"رول اون ديرما كنترول ديفند حريمي 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3331","name":"رول اون فريش حريمي 50 مل خصم 15%","cat":"m22","sub":"s66"},{"sku":"3333","name":"سبراي بيرل اند بيوتي 150 مل خصم 25%","cat":"m22","sub":"s66"},{"sku":"3337","name":"سبراي ديب اسبريسو رجالي 150 مل خصم 25%","cat":"m22","sub":"s66"},{"sku":"3343","name":"سبراي ديب اكستريم رجالي 150 مل","cat":"m22","sub":"s66"},{"sku":"3323","name":"سبراي ديب رجالي 150 مل خصم 25%","cat":"m22","sub":"s66"},{"sku":"3339","name":"سبراي ديرما كنترول حريمي بالهيدروجين النقي 150 مل خصم 25%","cat":"m22","sub":"s66"},{"sku":"3341","name":"سبراي ديرما كنترول حريمي بالهيدروجين النقي+ فيتامين سي 150 مل","cat":"m22","sub":"s66"},{"sku":"3725","name":"سبراي فريش حريمي 150 مل خصم 25%","cat":"m22","sub":"s66"},{"sku":"1232","name":"نيفيا استيك 50 مل الوان","cat":"m22","sub":"s66"},{"sku":"1832","name":"جيل حلاقة نيفيا 200 مل","cat":"m22","sub":"s67"},{"sku":"3811","name":"جيل حلاقة نيفيا بالنعناع200 مل","cat":"m22","sub":"s67"},{"sku":"3813","name":"جيل حلاقة نيفيا ديب 200 مل","cat":"m22","sub":"s67"},{"sku":"3812","name":"جيل حلاقة نيفيا للبشره الحساسه200 مل","cat":"m22","sub":"s67"},{"sku":"2070","name":"رغوة حلاقة نيفيا 200 مل","cat":"m22","sub":"s67"},{"sku":"3814","name":"رغوة حلاقة نيفيا ديب 200 مل","cat":"m22","sub":"s67"},{"sku":"3810","name":"رغوة حلاقة نيفيا للبشره الحساسة 200 مل","cat":"m22","sub":"s67"},{"sku":"3184","name":"بادي ملك ديليكيت جلو هاش","cat":"m23","sub":"s68"},{"sku":"3183","name":"بادي ملك سلك بلوسوم هاش","cat":"m23","sub":"s68"},{"sku":"3182","name":"بادي ملك كلاود كيس هاش","cat":"m23","sub":"s68"},{"sku":"3165","name":"رول اون انفزيبل غارد للرجال 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3169","name":"رول اون انفزيبل كير للنساء 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3164","name":"رول اون اوريجينال للرجال 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3167","name":"رول اون اوريجينال للنساء 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3166","name":"رول اون دراك مود للرجال 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3168","name":"رول اون وايت بيرل للنساء 50 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3171","name":"سبراي انفيزيبل غارد هاش","cat":"m23","sub":"s68"},{"sku":"3175","name":"سبراي انفيزيبل كير هاش","cat":"m23","sub":"s68"},{"sku":"3170","name":"سبراي اوريجينال للرجال هاش","cat":"m23","sub":"s68"},{"sku":"3173","name":"سبراي اوريجينال لنساء هاش","cat":"m23","sub":"s68"},{"sku":"3172","name":"سبراي دراك مود هاش","cat":"m23","sub":"s68"},{"sku":"3174","name":"سبراي وايت بيرل هاش","cat":"m23","sub":"s68"},{"sku":"3185","name":"سبلاش سبايس كيس 100 هاش","cat":"m23","sub":"s68"},{"sku":"3188","name":"سبلاش سبايس كيس 240 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3186","name":"سبلاش سنت جيم 100 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3189","name":"سبلاش سنت جيم 240 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3187","name":"سبلاش لاش سبيل 100 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3190","name":"سبلاش لاش سبيل 240 مللي هاش","cat":"m23","sub":"s68"},{"sku":"3176","name":"كريم يد بيتل تاتش هاش","cat":"m23","sub":"s68"},{"sku":"3178","name":"كريم يد سوفت ديزاير هاش","cat":"m23","sub":"s68"},{"sku":"3177","name":"كريم يد سويت ويسبر هاش","cat":"m23","sub":"s68"},{"sku":"3181","name":"لوشن للجسم 150 مللي سبيشال هاش","cat":"m23","sub":"s68"},{"sku":"3180","name":"لوشن للجسم 150 مللي ستند تاتش هاش","cat":"m23","sub":"s68"},{"sku":"3179","name":"لوشن للجسم 150 مللي هيدر غلو هاش","cat":"m23","sub":"s68"}]}</script><script id="app-js">
 const TITLE = "ايدج للتوزيع";
 const META_FIT = '<meta name="claude:viewport-fit-sides" content="cover">';
 const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap">';
@@ -219,18 +251,32 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const fmt = (n) => Number(n).toLocaleString("ar-EG", { maximumFractionDigits: 2 });
 const money = (n) => fmt(n) + " ج.م";
 const toLatinDigits = (s) => String(s).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const norm = (s) => toLatinDigits(s).toLowerCase().replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه");
 const clone = (o) => JSON.parse(JSON.stringify(o));
+const collator = new Intl.Collator("ar", { numeric: true });
 
 $("root").appendChild($("shell").content.cloneNode(true));
 
 const data = JSON.parse($("site-data").textContent);
-const unitOf = (p) => p.unit || "كرتونة";
-const catName = (id) => (data.cats.find((c) => c.id === id) || {}).name || "";
-const visible = () => data.products.filter((p) => !p.hidden && data.cats.some((c) => c.id === p.cat));
-const byId = Object.fromEntries(visible().map((p) => [p.sku, p]));
+let P = [], byId = {}, catMap = {}, subMap = {}, cnt = { cat: {}, sub: {} };
+
+function buildIndex() {
+  catMap = Object.fromEntries(data.cats.map((c, i) => [c.id, { ...c, order: i }]));
+  subMap = Object.fromEntries(data.subs.map((s, i) => [s.id, { ...s, order: i }]));
+  P = data.products
+    .filter((p) => !p.hidden && catMap[p.cat] && subMap[p.sub] && subMap[p.sub].cat === p.cat)
+    .map((p) => ({ ...p, _k: norm(p.name + " " + p.sku) }));
+  P.sort((a, b) => catMap[a.cat].order - catMap[b.cat].order || subMap[a.sub].order - subMap[b.sub].order || collator.compare(a.name, b.name));
+  byId = Object.fromEntries(P.map((p) => [p.sku, p]));
+  cnt = { cat: {}, sub: {} };
+  P.forEach((p) => { cnt.cat[p.cat] = (cnt.cat[p.cat] || 0) + 1; cnt.sub[p.sub] = (cnt.sub[p.sub] || 0) + 1; });
+}
+buildIndex();
+const usedCats = () => data.cats.filter((c) => cnt.cat[c.id]);
+const usedSubs = (catId) => data.subs.filter((s) => s.cat === catId && cnt.sub[s.id]);
 
 let cart = {};
-let cat = "all";
+let sel = { cat: null, sub: null };
 let query = "";
 let placed = null;
 const draft = { name: "", phone: "", address: "", notes: "" };
@@ -240,12 +286,16 @@ Object.keys(cart).forEach((k) => { if (!byId[k] || !(cart[k] > 0)) delete cart[k
 function save() { try { localStorage.setItem("edge-cart", JSON.stringify(cart)); } catch (e) {} }
 
 function totals() {
-  let n = 0, sum = 0;
-  for (const k in cart) { n += cart[k]; sum += cart[k] * byId[k].price; }
-  return { n, sum };
+  let n = 0, lines = 0, sum = 0, all = true;
+  for (const k in cart) {
+    const p = byId[k];
+    n += cart[k]; lines++;
+    if (p.price > 0) sum += cart[k] * p.price; else all = false;
+  }
+  return { n, lines, sum, all };
 }
 function setQty(sku, q) {
-  if (q <= 0) delete cart[sku]; else cart[sku] = Math.min(q, 999);
+  if (q <= 0) delete cart[sku]; else cart[sku] = Math.min(q, 9999);
   placed = null;
   save();
   render();
@@ -256,43 +306,94 @@ function headRender() {
   $("tagline").textContent = data.settings.tagline;
   $("notice").textContent = data.settings.notice || "";
   $("notice").hidden = !data.settings.notice;
-}
-
-function chipsRender() {
-  const used = data.cats.filter((c) => visible().some((p) => p.cat === c.id));
-  if (cat !== "all" && !used.some((c) => c.id === cat)) cat = "all";
-  const all = [{ id: "all", name: "الكل" }, ...used];
-  $("chips").innerHTML = all.map((c) => `<button type="button" class="chip" data-cat="${esc(c.id)}" aria-pressed="${cat === c.id}">${esc(c.name)}</button>`).join("");
+  $("statN").textContent = fmt(P.length) + " صنف";
+  $("statG").textContent = fmt(usedCats().length) + " مجموعة أساسية";
 }
 
 function stepperHtml(sku, q) {
   return `<div class="stepper"><button type="button" data-act="dec" data-sku="${esc(sku)}" aria-label="تقليل">−</button><output aria-live="polite">${fmt(q)}</output><button type="button" data-act="inc" data-sku="${esc(sku)}" aria-label="زيادة">+</button></div>`;
 }
 
-function gridRender() {
-  const term = query.trim().toLowerCase();
-  const list = visible().filter((p) => (cat === "all" || p.cat === cat) && (!term || p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)));
-  if (!list.length) {
-    $("grid").innerHTML = `<div class="empty">${data.products.length ? "مفيش صنف بالاسم ده. جرّب كلمة تانية." : "لسه ما فيش أصناف."}</div>`;
-    return;
-  }
-  $("grid").innerHTML = list.map((p) => {
-    const q = cart[p.sku] || 0;
-    const per = p.price / p.pcs;
-    return `<article class="prod">
-      <div class="strip"><span class="sku">${esc(p.sku)}</span><span>${esc(catName(p.cat))}</span></div>
-      <div class="box"><svg aria-hidden="true"><use href="#carton"/></svg></div>
-      <div class="body">
-        <h3>${esc(p.name)}</h3>
-        <div class="pack">${esc(unitOf(p))} ${fmt(p.pcs)} عبوة</div>
-        <div class="price"><strong>${money(p.price)}</strong><small>≈ ${money(per)} للعبوة</small></div>
-        ${q ? stepperHtml(p.sku, q) : `<button type="button" class="add" data-act="add" data-sku="${esc(p.sku)}">ضيف للسلة</button>`}
-      </div></article>`;
-  }).join("");
+/* ---------- المجموعات ---------- */
+function treeRender() {
+  $("tree").innerHTML = `<button type="button" class="tr-main${!sel.cat ? " on" : ""}" data-g="all"><span>كل المجموعات</span><span class="n">${fmt(P.length)}</span></button>` +
+    usedCats().map((c) => {
+      const on = sel.cat === c.id;
+      let h = `<button type="button" class="tr-main${on && !sel.sub ? " on" : ""}${on ? " open" : ""}" data-g="cat" data-cat="${esc(c.id)}" aria-expanded="${on}"><span>${esc(c.name)}</span><span class="n">${fmt(cnt.cat[c.id])}</span></button>`;
+      if (on) h += usedSubs(c.id).map((s) => `<button type="button" class="tr-sub${sel.sub === s.id ? " on" : ""}" data-g="sub" data-cat="${esc(c.id)}" data-sub="${esc(s.id)}"><span>${esc(s.name)}</span><span class="n">${fmt(cnt.sub[s.id])}</span></button>`).join("");
+      return h;
+    }).join("");
+}
+function chipsRender() {
+  $("chips").innerHTML = `<button type="button" class="chip" data-g="all" aria-pressed="${!sel.cat}">الكل</button>` +
+    usedCats().map((c) => `<button type="button" class="chip" data-g="cat" data-cat="${esc(c.id)}" aria-pressed="${sel.cat === c.id}">${esc(c.name)}</button>`).join("");
+  const sc = $("subchips");
+  sc.hidden = !sel.cat;
+  sc.innerHTML = sel.cat
+    ? `<button type="button" class="chip sm" data-g="cat" data-cat="${esc(sel.cat)}" aria-pressed="${!sel.sub}">كل ${esc(catMap[sel.cat].name)}</button>` +
+      usedSubs(sel.cat).map((s) => `<button type="button" class="chip sm" data-g="sub" data-cat="${esc(sel.cat)}" data-sub="${esc(s.id)}" aria-pressed="${sel.sub === s.id}">${esc(s.name)}</button>`).join("")
+    : "";
 }
 
+function rowHtml(p, showPath) {
+  const q = cart[p.sku] || 0;
+  const meta = [];
+  if (showPath) meta.push(esc(catMap[p.cat].name) + " › " + esc(subMap[p.sub].name));
+  if (p.pcs) meta.push((p.unit ? esc(p.unit) + " " : "") + fmt(p.pcs) + " عبوة");
+  else if (p.unit) meta.push(esc(p.unit));
+  if (p.price > 0) meta.push(money(p.price));
+  return `<div class="row${q ? " in" : ""}"><span class="sku">${esc(p.sku)}</span><div><div class="nm">${esc(p.name)}</div>${meta.length ? `<div class="meta">${meta.join(" · ")}</div>` : ""}</div><div>${q ? stepperHtml(p.sku, q) : `<button type="button" class="add" data-act="add" data-sku="${esc(p.sku)}">ضيف</button>`}</div></div>`;
+}
+
+function paneRender() {
+  const crumb = $("crumb"), list = $("list");
+  const term = norm(query.trim());
+  if (term) {
+    const toks = term.split(/\s+/);
+    const res = P.filter((p) => toks.every((t) => p._k.includes(t)));
+    crumb.innerHTML = `<span class="cur">نتائج البحث</span><span class="cnt">${fmt(res.length)} صنف</span>`;
+    list.innerHTML = res.length
+      ? `<div class="rows">${res.slice(0, 200).map((p) => rowHtml(p, true)).join("")}</div>` + (res.length > 200 ? `<p class="hint">ظاهر أول ٢٠٠ نتيجة من ${fmt(res.length)}. اكتب كلمة أدق.</p>` : "")
+      : `<div class="empty">مفيش صنف بالاسم ده. جرّب كلمة تانية.</div>`;
+    return;
+  }
+  if (!sel.cat) {
+    crumb.innerHTML = `<span class="cur">كل المجموعات</span><span class="cnt">${fmt(P.length)} صنف</span>`;
+    list.innerHTML = P.length ? `<div class="gcards">${usedCats().map((c) => {
+      const subs = usedSubs(c.id);
+      return `<button type="button" class="gcard" data-g="cat" data-cat="${esc(c.id)}"><b>${esc(c.name)}</b><span class="m">${fmt(subs.length)} فرعية · ${fmt(cnt.cat[c.id])} صنف</span><span class="s">${subs.slice(0, 4).map((s) => esc(s.name)).join(" · ")}</span></button>`;
+    }).join("")}</div>` : `<div class="empty">لسه ما فيش أصناف.</div>`;
+    return;
+  }
+  const c = catMap[sel.cat];
+  const parts = [`<button type="button" data-g="all">كل المجموعات</button>`, `<span class="sep">›</span>`];
+  parts.push(sel.sub ? `<button type="button" data-g="cat" data-cat="${esc(c.id)}">${esc(c.name)}</button><span class="sep">›</span><span class="cur">${esc(subMap[sel.sub].name)}</span>` : `<span class="cur">${esc(c.name)}</span>`);
+  parts.push(`<span class="cnt">${fmt(sel.sub ? cnt.sub[sel.sub] : cnt.cat[sel.cat])} صنف</span>`);
+  crumb.innerHTML = parts.join("");
+  if (sel.sub) {
+    list.innerHTML = `<div class="rows">${P.filter((p) => p.sub === sel.sub).map((p) => rowHtml(p, false)).join("")}</div>`;
+  } else {
+    list.innerHTML = usedSubs(c.id).map((s) => `<section><h3 class="sub-h"><button type="button" data-g="sub" data-cat="${esc(c.id)}" data-sub="${esc(s.id)}">${esc(s.name)}</button><span class="cnt">${fmt(cnt.sub[s.id])} صنف</span></h3><div class="rows">${P.filter((p) => p.sub === s.id).map((p) => rowHtml(p, false)).join("")}</div></section>`).join("");
+  }
+}
+
+function navRender(scroll) {
+  treeRender();
+  chipsRender();
+  paneRender();
+  if (scroll) {
+    const r = $("pane").getBoundingClientRect();
+    if (r.top < 0) $("pane").scrollIntoView({ block: "start" });
+  }
+}
+
+/* ---------- السلة ---------- */
 function orderText(ref, f) {
-  const lines = Object.keys(cart).map((k) => { const p = byId[k]; return `• ${p.name} (${p.sku}) × ${fmt(cart[k])} ${unitOf(p)} = ${money(cart[k] * p.price)}`; });
+  const t = totals();
+  const lines = Object.keys(cart).map((k) => {
+    const p = byId[k];
+    return `• ${p.name} (${p.sku}) × ${fmt(cart[k])}${p.unit ? " " + p.unit : ""}${p.price > 0 ? " = " + money(cart[k] * p.price) : ""}`;
+  });
   return [
     `طلب جديد من ${data.settings.storeName}`,
     `رقم الطلب: ${ref}`,
@@ -302,13 +403,13 @@ function orderText(ref, f) {
     "",
     ...lines,
     "",
-    `الإجمالي: ${money(totals().sum)}`,
+    t.all ? `الإجمالي: ${money(t.sum)}` : `عدد الأصناف: ${fmt(t.lines)} (الأسعار بتتأكد مع المندوب)`,
     f.notes ? `ملاحظات: ${f.notes}` : ""
   ].filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n").trim();
 }
 
 function cartRender() {
-  const { n, sum } = totals();
+  const t = totals();
   const body = $("cartBody");
   if (placed) {
     const wa = data.settings.whatsapp ? `https://wa.me/${encodeURIComponent(data.settings.whatsapp)}?text=${encodeURIComponent(placed.text)}` : "";
@@ -327,14 +428,14 @@ function cartRender() {
     $("orderText").value = placed.text;
     return;
   }
-  if (!n) { body.innerHTML = `<div class="cart-empty">السلة فاضية. اختار أصناف من القايمة.</div>`; return; }
+  if (!t.n) { body.innerHTML = `<div class="cart-empty">السلة فاضية. اختار أصناف من القايمة.</div>`; return; }
   body.innerHTML = `<ul class="lines">${Object.keys(cart).map((k) => {
     const p = byId[k];
-    return `<li class="line"><div><div class="nm">${esc(p.name)}</div><div class="sub">${money(p.price)} لل${esc(unitOf(p))}</div></div>
-      <div class="tot">${money(cart[k] * p.price)}</div>
+    return `<li class="line"><div><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.sku)} · ${esc(subMap[p.sub].name)}</div></div>
+      <div class="tot">${p.price > 0 ? money(cart[k] * p.price) : ""}</div>
       <div class="ctl">${stepperHtml(k, cart[k])}<button type="button" class="rm" data-act="rm" data-sku="${esc(k)}">شيل</button></div></li>`;
   }).join("")}</ul>
-  <div class="sum"><span>إجمالي الطلب (${fmt(n)} وحدة)</span><strong>${money(sum)}</strong></div>
+  <div class="sum"><span>${fmt(t.lines)} صنف · ${fmt(t.n)} وحدة</span>${t.all ? `<strong>${money(t.sum)}</strong>` : `<small>السعر بيتأكد مع المندوب</small>`}</div>
   <form class="order" id="orderForm" novalidate>
     <div class="field"><label for="f-name">الاسم / اسم المحل</label><input id="f-name" name="name" autocomplete="name"><div class="err" id="e-name"></div></div>
     <div class="field"><label for="f-phone">رقم الموبايل</label><input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx" dir="ltr" style="text-align:right"><div class="err" id="e-phone"></div></div>
@@ -350,21 +451,21 @@ function cartRender() {
 }
 
 function barRender() {
-  const { n, sum } = totals();
-  $("barCount").textContent = n ? `السلة (${fmt(n)})` : "السلة فاضية";
-  $("barTotal").textContent = n ? money(sum) : "";
+  const t = totals();
+  $("barCount").textContent = t.n ? `السلة (${fmt(t.lines)} صنف)` : "السلة فاضية";
+  $("barTotal").textContent = t.n && t.all ? money(t.sum) : "";
 }
 
 function render() {
   const active = document.activeElement;
   const key = active && active.dataset && active.dataset.act ? `[data-act="${active.dataset.act}"][data-sku="${active.dataset.sku}"]` : null;
   const inCart = active && active.closest && active.closest("#cart");
-  gridRender();
+  paneRender();
   const keepFormFocus = active && active.id && /^f-/.test(active.id);
   if (!keepFormFocus) cartRender();
   barRender();
   if (key && !placed) {
-    const root = inCart ? $("cart") : $("grid");
+    const root = inCart ? $("cart") : $("list");
     const el = root.querySelector(key) || document.querySelector(key);
     if (el) el.focus();
   }
@@ -388,7 +489,11 @@ async function copyOrder() {
 }
 
 /* ===================== إدارة الموقع (للمحرر فقط) ===================== */
-let adm = null; // { d: draft copy, tab, editing, dirty, delAsk, closeAsk, busy }
+let adm = null; // { d, tab, editing, dirty, delAsk, closeAsk, busy, f:{q,cat,sub}, more }
+const subsIn = (d, catId) => d.subs.filter((s) => s.cat === catId);
+const catNameD = (d, id) => (d.cats.find((c) => c.id === id) || {}).name || "";
+const subNameD = (d, id) => (d.subs.find((s) => s.id === id) || {}).name || "";
+const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
 
 function normWa(s) {
   let d = toLatinDigits(s).replace(/\D/g, "").replace(/^00/, "");
@@ -423,7 +528,7 @@ function setStatus(msg, bad) {
 function markDirty() { adm.dirty = true; adm.closeAsk = false; setStatus("في تغييرات لسه ما اتنشرتش."); }
 
 function openAdmin() {
-  adm = { d: clone(data), tab: "products", editing: null, dirty: false, delAsk: null, closeAsk: false, busy: false };
+  adm = { d: clone(data), tab: "products", editing: null, dirty: false, delAsk: null, closeAsk: false, busy: false, f: { q: "", cat: "", sub: "" }, more: 1 };
   $("admin").hidden = false;
   adminRender();
 }
@@ -433,55 +538,78 @@ function closeAdmin() {
   adm = null;
 }
 
-function nextSku(catId) {
-  const pre = (catId || "ITM").toUpperCase().slice(0, 3);
-  let max = 100;
-  adm.d.products.forEach((p) => { const m = p.sku.match(/-(\d+)$/); if (m && p.sku.startsWith(pre + "-")) max = Math.max(max, +m[1]); });
-  return pre + "-" + (max + 1);
+function nextSku() {
+  let max = 0;
+  adm.d.products.forEach((p) => { if (/^\d+$/.test(p.sku)) max = Math.max(max, +p.sku); });
+  return String(max + 1);
 }
 
 function productFormHtml() {
-  const e = adm.editing === "__new" ? null : adm.d.products.find((p) => p.sku === adm.editing);
-  const v = e || { sku: "", cat: (adm.d.cats[0] || {}).id || "", name: "", pcs: 12, unit: "كرتونة", price: "", hidden: false };
+  const d = adm.d;
+  const isNew = adm.editing === "__new";
+  const e = isNew ? null : d.products.find((p) => p.sku === adm.editing);
+  const v = e || { sku: "", cat: adm.f.cat || (d.cats[0] || {}).id || "", sub: adm.f.sub || "", name: "", pcs: "", unit: "", price: "", hidden: false };
+  const subs = subsIn(d, v.cat);
+  const subSel = subs.some((s) => s.id === v.sub) ? v.sub : (subs[0] || {}).id;
   return `<form class="ad-form" id="pform" novalidate>
     <div class="field wide"><label for="p-name">اسم الصنف</label><input id="p-name" value="${esc(v.name)}"></div>
-    <div class="field"><label for="p-cat">التصنيف</label><select id="p-cat">${adm.d.cats.map((c) => `<option value="${esc(c.id)}"${c.id === v.cat ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="p-cat">المجموعة الأساسية</label><select id="p-cat">${d.cats.map((c) => `<option value="${esc(c.id)}"${c.id === v.cat ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="p-sub">المجموعة الفرعية</label><select id="p-sub">${subs.map((s) => `<option value="${esc(s.id)}"${s.id === subSel ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></div>
     <div class="field"><label for="p-sku">الكود (سيبه فاضي ويتكتب لوحده)</label><input id="p-sku" dir="ltr" value="${esc(v.sku)}" style="text-align:right"></div>
-    <div class="field"><label for="p-unit">وحدة البيع</label><input id="p-unit" value="${esc(v.unit || "كرتونة")}"></div>
-    <div class="field"><label for="p-pcs">عدد العبوات في الوحدة</label><input id="p-pcs" type="number" min="1" step="1" inputmode="numeric" value="${esc(v.pcs)}"></div>
-    <div class="field"><label for="p-price">سعر الوحدة (ج.م)</label><input id="p-price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(v.price)}"></div>
-    <div class="field check"><input id="p-hidden" type="checkbox"${v.hidden ? " checked" : ""}><label for="p-hidden" style="margin:0">مخفي عن العملاء</label></div>
-    <div class="wide err" id="p-err" style="color:var(--danger);font-size:13px"></div>
-    <div class="wide row"><button type="submit" class="ad-btn main">${e ? "حفظ التعديل" : "إضافة الصنف"}</button><button type="button" class="ad-btn" data-ad="pcancel">إلغاء</button></div>
+    <div class="field"><label for="p-unit">وحدة البيع (اختياري)</label><input id="p-unit" value="${esc(v.unit || "")}" placeholder="كرتونة، علبة…"></div>
+    <div class="field"><label for="p-pcs">عدد العبوات في الوحدة (اختياري)</label><input id="p-pcs" type="number" min="1" step="1" inputmode="numeric" value="${esc(v.pcs || "")}"></div>
+    <div class="field"><label for="p-price">سعر الوحدة بالجنيه (اختياري)</label><input id="p-price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(v.price || "")}"></div>
+    <div class="field check wide"><input id="p-hidden" type="checkbox"${v.hidden ? " checked" : ""}><label for="p-hidden" style="margin:0">مخفي عن العملاء</label></div>
+    <div class="wide" id="p-err" style="color:var(--danger);font-size:13px"></div>
+    <div class="wide row2"><button type="submit" class="ad-btn main">${e ? "حفظ التعديل" : "إضافة الصنف"}</button><button type="button" class="ad-btn" data-ad="pcancel">إلغاء</button></div>
   </form>`;
+}
+
+function adminFiltered() {
+  const f = adm.f;
+  const toks = norm(f.q.trim()).split(/\s+/).filter(Boolean);
+  return adm.d.products.filter((p) => (!f.cat || p.cat === f.cat) && (!f.sub || p.sub === f.sub) && (!toks.length || toks.every((t) => norm(p.name + " " + p.sku).includes(t))));
+}
+function adminListRender() {
+  const d = adm.d;
+  const all = adminFiltered();
+  const shown = all.slice(0, 50 * adm.more);
+  $("adCount").textContent = `${fmt(all.length)} صنف${all.length !== d.products.length ? " من " + fmt(d.products.length) : ""}`;
+  $("adList").innerHTML = shown.length ? shown.map((p) => `<li class="ad-row${p.hidden ? " off" : ""}">
+      <div class="info"><span class="sku">${esc(p.sku)}</span> <b>${esc(p.name)}</b> ${p.hidden ? '<span class="badge">مخفي</span>' : ""}
+        <div class="sub">${esc(catNameD(d, p.cat) || "بدون مجموعة")} › ${esc(subNameD(d, p.sub) || "—")}${p.price > 0 ? " · " + money(p.price) : ""}</div></div>
+      <div class="ad-act">
+        <button type="button" class="ad-btn sm" data-ad="pedit" data-sku="${esc(p.sku)}">تعديل</button>
+        <button type="button" class="ad-btn sm" data-ad="phide" data-sku="${esc(p.sku)}">${p.hidden ? "إظهار" : "إخفاء"}</button>
+        <button type="button" class="ad-btn sm danger" data-ad="pdel" data-sku="${esc(p.sku)}">${adm.delAsk === p.sku ? "تأكيد الحذف" : "حذف"}</button>
+      </div></li>`).join("") + (all.length > shown.length ? `<li><button type="button" class="ad-btn" data-ad="more">عرض المزيد (${fmt(all.length - shown.length)})</button></li>` : "")
+    : '<li class="empty">ما فيش أصناف بالفلتر ده.</li>';
 }
 
 function adminRender() {
   const d = adm.d;
   let body = "";
   if (adm.tab === "products") {
-    body += `<div style="margin-top:14px"><button type="button" class="ad-btn main" data-ad="padd">+ صنف جديد</button></div>`;
-    if (adm.editing) body += `<div style="margin-top:14px">${productFormHtml()}</div>`;
-    body += `<ul class="ad-list">${d.products.length ? d.products.map((p, i) => `<li class="ad-row${p.hidden ? " off" : ""}">
-      <div class="info"><span class="sku">${esc(p.sku)}</span> <b>${esc(p.name)}</b> ${p.hidden ? '<span class="badge">مخفي</span>' : ""}
-        <div class="sub">${esc(catName2(d, p.cat) || "بدون تصنيف")} · ${esc(p.unit || "كرتونة")} ${fmt(p.pcs)} عبوة · ${money(p.price)}</div></div>
-      <div class="ad-act">
-        <button type="button" class="ad-btn sm" data-ad="up" data-i="${i}" aria-label="لفوق"${i === 0 ? " disabled" : ""}>↑</button>
-        <button type="button" class="ad-btn sm" data-ad="down" data-i="${i}" aria-label="لتحت"${i === d.products.length - 1 ? " disabled" : ""}>↓</button>
-        <button type="button" class="ad-btn sm" data-ad="pedit" data-sku="${esc(p.sku)}">تعديل</button>
-        <button type="button" class="ad-btn sm" data-ad="phide" data-sku="${esc(p.sku)}">${p.hidden ? "إظهار" : "إخفاء"}</button>
-        <button type="button" class="ad-btn sm danger" data-ad="pdel" data-sku="${esc(p.sku)}">${adm.delAsk === p.sku ? "تأكيد الحذف" : "حذف"}</button>
-      </div></li>`).join("") : '<li class="empty">ما فيش أصناف. دوس "صنف جديد".</li>'}</ul>`;
+    const subsF = adm.f.cat ? subsIn(d, adm.f.cat) : [];
+    body += `<div class="ad-bar"><button type="button" class="ad-btn main" data-ad="padd">+ صنف جديد</button>
+      <input id="a-q" type="search" placeholder="بحث بالاسم أو الكود" aria-label="بحث" value="${esc(adm.f.q)}">
+      <select id="a-cat" aria-label="المجموعة الأساسية"><option value="">كل المجموعات</option>${d.cats.map((c) => `<option value="${esc(c.id)}"${adm.f.cat === c.id ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select>
+      <select id="a-sub" aria-label="المجموعة الفرعية"${adm.f.cat ? "" : " disabled"}><option value="">كل الفرعية</option>${subsF.map((s) => `<option value="${esc(s.id)}"${adm.f.sub === s.id ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></div>`;
+    if (adm.editing) body += productFormHtml();
+    body += `<p class="hint" id="adCount"></p><ul class="ad-list" id="adList"></ul>`;
   } else {
+    const pc = {}, ps = {};
+    d.products.forEach((p) => { pc[p.cat] = (pc[p.cat] || 0) + 1; ps[p.sub] = (ps[p.sub] || 0) + 1; });
     body += `<h3 class="ad-sec">بيانات الموقع</h3><div class="ad-grid">
       <div class="field"><label for="s-name">اسم الشركة</label><input id="s-name" value="${esc(d.settings.storeName)}"></div>
       <div class="field"><label for="s-tag">جملة تحت الاسم</label><textarea id="s-tag">${esc(d.settings.tagline)}</textarea></div>
       <div class="field"><label for="s-wa">رقم واتساب لاستقبال الطلبات</label><input id="s-wa" dir="ltr" style="text-align:right" inputmode="tel" placeholder="01xxxxxxxxx" value="${esc(d.settings.whatsapp)}"><div class="hint">لو سيبته فاضي، العميل هيقدر ينسخ الطلب بس.</div></div>
       <div class="field"><label for="s-notice">تنبيه أعلى الصفحة (سيبه فاضي لو مش عايز تنبيه)</label><input id="s-notice" value="${esc(d.settings.notice)}"></div></div>
-      <h3 class="ad-sec">التصنيفات</h3>
-      <ul class="ad-list">${d.cats.map((c, i) => `<li class="ad-row"><div class="info"><input class="c-name" data-i="${i}" value="${esc(c.name)}" aria-label="اسم التصنيف" style="width:100%;padding:7px 10px;border:1px solid var(--line);background:var(--bg);border-radius:4px"></div>
-        <div class="ad-act"><button type="button" class="ad-btn sm danger" data-ad="cdel" data-i="${i}">حذف</button></div></li>`).join("")}</ul>
-      <div class="ad-form" style="margin-top:10px;grid-template-columns:1fr auto;align-items:end"><div class="field"><label for="c-new">تصنيف جديد</label><input id="c-new"></div><button type="button" class="ad-btn main" data-ad="cadd">إضافة</button></div>`;
+      <h3 class="ad-sec">المجموعات الأساسية والفرعية</h3>` +
+      d.cats.map((c) => `<div class="ad-grp"><div class="ad-grp-h"><input class="m-name" data-id="${esc(c.id)}" value="${esc(c.name)}" aria-label="اسم المجموعة الأساسية"><span class="badge">${fmt(pc[c.id] || 0)} صنف</span><button type="button" class="ad-btn sm danger" data-ad="mdel" data-id="${esc(c.id)}">حذف</button></div>
+        <ul class="ad-subs">${subsIn(d, c.id).map((s) => `<li><input class="s-name" data-id="${esc(s.id)}" value="${esc(s.name)}" aria-label="اسم المجموعة الفرعية"><span class="badge">${fmt(ps[s.id] || 0)}</span><button type="button" class="ad-btn sm danger" data-ad="sdel" data-id="${esc(s.id)}">حذف</button></li>`).join("")}</ul>
+        <div class="ad-add"><input class="s-new" data-cat="${esc(c.id)}" placeholder="مجموعة فرعية جديدة" aria-label="مجموعة فرعية جديدة"><button type="button" class="ad-btn sm main" data-ad="sadd" data-cat="${esc(c.id)}">+ فرعية</button></div></div>`).join("") +
+      `<div class="ad-form"><div class="field wide"><label for="m-new">مجموعة أساسية جديدة</label><input id="m-new"></div><div class="wide"><button type="button" class="ad-btn main" data-ad="madd">إضافة مجموعة أساسية</button></div></div>`;
   }
   $("adminBody").innerHTML = `<div class="ad-head"><h2>إدارة الموقع</h2>
       <button type="button" class="ad-btn" data-ad="close">إغلاق</button>
@@ -489,30 +617,36 @@ function adminRender() {
       <div class="ad-status" id="adStatus" role="status"></div></div>
     <div class="ad-tabs" role="tablist">
       <button type="button" class="ad-tab" role="tab" data-ad="tab" data-tab="products" aria-selected="${adm.tab === "products"}">الأصناف</button>
-      <button type="button" class="ad-tab" role="tab" data-ad="tab" data-tab="settings" aria-selected="${adm.tab === "settings"}">الإعدادات والتصنيفات</button></div>${body}`;
+      <button type="button" class="ad-tab" role="tab" data-ad="tab" data-tab="groups" aria-selected="${adm.tab === "groups"}">المجموعات والإعدادات</button></div>${body}`;
+  if (adm.tab === "products") adminListRender();
   if (adm.dirty) setStatus("في تغييرات لسه ما اتنشرتش.");
   else setStatus("التعديلات مش هتظهر للعملاء إلا بعد \"حفظ ونشر\".");
 }
-function catName2(d, id) { return (d.cats.find((c) => c.id === id) || {}).name || ""; }
 
 function submitProduct() {
   const d = adm.d;
   const g = (id) => $(id);
-  const name = g("p-name").value.trim();
-  const pcs = Math.floor(Number(toLatinDigits(g("p-pcs").value)));
-  const price = Number(toLatinDigits(g("p-price").value));
-  let sku = g("p-sku").value.trim().toUpperCase().replace(/\s+/g, "-");
-  const catId = g("p-cat").value;
   const err = (m) => { g("p-err").textContent = m; };
+  const name = g("p-name").value.trim();
+  const catId = g("p-cat").value;
+  const subId = g("p-sub").value;
+  let sku = toLatinDigits(g("p-sku").value).trim().replace(/\s+/g, "-");
+  const pcsRaw = toLatinDigits(g("p-pcs").value).trim();
+  const priceRaw = toLatinDigits(g("p-price").value).trim();
   if (!name) return err("اكتب اسم الصنف.");
-  if (!catId) return err("ضيف تصنيف الأول من تبويب الإعدادات.");
-  if (!(pcs >= 1)) return err("عدد العبوات لازم يكون ١ أو أكتر.");
-  if (!(price > 0)) return err("اكتب سعر أكبر من صفر.");
-  if (!sku) sku = nextSku(catId);
-  const clash = d.products.some((p) => p.sku === sku && p.sku !== adm.editing);
-  if (clash) return err("الكود ده مستخدم في صنف تاني.");
-  const item = { sku, cat: catId, name, pcs, unit: g("p-unit").value.trim() || "كرتونة", price, hidden: g("p-hidden").checked };
-  if (adm.editing === "__new") d.products.push(item);
+  if (!catId || !subId) return err("اختار المجموعة الأساسية والفرعية. لو مفيش فرعية، ضيفها من تبويب المجموعات.");
+  let pcs, price;
+  if (pcsRaw) { pcs = Math.floor(Number(pcsRaw)); if (!(pcs >= 1)) return err("عدد العبوات لازم يكون ١ أو أكتر."); }
+  if (priceRaw) { price = Number(priceRaw); if (!(price > 0)) return err("السعر لازم يكون أكبر من صفر، أو سيبه فاضي."); }
+  if (!sku) sku = nextSku();
+  if (d.products.some((p) => p.sku === sku && p.sku !== adm.editing)) return err("الكود ده مستخدم في صنف تاني.");
+  const item = { sku, name, cat: catId, sub: subId };
+  const unit = g("p-unit").value.trim();
+  if (unit) item.unit = unit;
+  if (pcs) item.pcs = pcs;
+  if (price) item.price = price;
+  if (g("p-hidden").checked) item.hidden = true;
+  if (adm.editing === "__new") d.products.unshift(item);
   else { const i = d.products.findIndex((p) => p.sku === adm.editing); if (i >= 0) d.products[i] = item; }
   adm.editing = null;
   markDirty();
@@ -522,7 +656,11 @@ function submitProduct() {
 async function saveAdmin() {
   if (adm.busy) return;
   const d = adm.d;
-  if (!d.settings.storeName.trim()) { setStatus("اسم الشركة مطلوب.", true); return; }
+  d.settings.storeName = d.settings.storeName.trim();
+  if (!d.settings.storeName) { setStatus("اسم الشركة مطلوب.", true); return; }
+  d.cats.forEach((c) => { c.name = c.name.trim(); });
+  d.subs.forEach((s) => { s.name = s.name.trim(); });
+  if (d.cats.some((c) => !c.name) || d.subs.some((s) => !s.name)) { setStatus("في مجموعة اسمها فاضي. اكتب اسمها أو احذفها.", true); return; }
   adm.busy = true;
   $("adSave").disabled = true;
   setStatus("جاري النشر…");
@@ -543,8 +681,16 @@ async function saveAdmin() {
 }
 
 document.addEventListener("click", (e) => {
-  const chip = e.target.closest(".chip");
-  if (chip) { cat = chip.dataset.cat; chipsRender(); gridRender(); return; }
+  const g = e.target.closest("[data-g]");
+  if (g) {
+    const k = g.dataset.g;
+    if (k === "all") sel = { cat: null, sub: null };
+    else if (k === "cat") sel = { cat: g.dataset.cat, sub: null };
+    else sel = { cat: g.dataset.cat, sub: g.dataset.sub };
+    if (query) { query = ""; $("q").value = ""; }
+    navRender(true);
+    return;
+  }
   const b = e.target.closest("[data-act]");
   if (b) {
     const sku = b.dataset.sku;
@@ -565,28 +711,35 @@ document.addEventListener("click", (e) => {
   else if (k === "save") saveAdmin();
   else if (k === "tab") { adm.tab = a.dataset.tab; adm.editing = null; adminRender(); }
   else if (k === "padd") { adm.editing = "__new"; adminRender(); $("p-name").focus(); }
-  else if (k === "pedit") { adm.editing = a.dataset.sku; adminRender(); $("p-name").focus(); }
+  else if (k === "pedit") { adm.editing = a.dataset.sku; adminRender(); $("p-name").focus(); $("pform").scrollIntoView({ block: "center" }); }
   else if (k === "pcancel") { adm.editing = null; adminRender(); }
-  else if (k === "phide") { const p = d.products.find((x) => x.sku === a.dataset.sku); if (p) { p.hidden = !p.hidden; markDirty(); adminRender(); } }
+  else if (k === "more") { adm.more++; adminListRender(); }
+  else if (k === "phide") { const p = d.products.find((x) => x.sku === a.dataset.sku); if (p) { if (p.hidden) delete p.hidden; else p.hidden = true; markDirty(); adminListRender(); } }
   else if (k === "pdel") {
     if (adm.delAsk === a.dataset.sku) { d.products = d.products.filter((x) => x.sku !== a.dataset.sku); adm.delAsk = null; markDirty(); }
     else adm.delAsk = a.dataset.sku;
-    adminRender();
+    adminListRender();
   }
-  else if (k === "up" || k === "down") {
-    const i = +a.dataset.i, j = k === "up" ? i - 1 : i + 1;
-    if (j >= 0 && j < d.products.length) { [d.products[i], d.products[j]] = [d.products[j], d.products[i]]; markDirty(); adminRender(); }
-  }
-  else if (k === "cadd") {
-    const name = $("c-new").value.trim();
-    if (!name) { setStatus("اكتب اسم التصنيف.", true); return; }
-    d.cats.push({ id: "c" + Date.now().toString(36), name });
+  else if (k === "madd") {
+    const name = $("m-new").value.trim();
+    if (!name) { setStatus("اكتب اسم المجموعة.", true); return; }
+    d.cats.push({ id: newId("m"), name });
     markDirty(); adminRender();
   }
-  else if (k === "cdel") {
-    const c = d.cats[+a.dataset.i];
-    if (d.products.some((p) => p.cat === c.id)) { setStatus("التصنيف ده فيه أصناف. انقلها لتصنيف تاني أو احذفها الأول.", true); return; }
-    d.cats.splice(+a.dataset.i, 1); markDirty(); adminRender();
+  else if (k === "sadd") {
+    const inp = adm.tab === "groups" ? $("adminBody").querySelector(`.s-new[data-cat="${a.dataset.cat}"]`) : null;
+    const name = inp ? inp.value.trim() : "";
+    if (!name) { setStatus("اكتب اسم المجموعة الفرعية.", true); return; }
+    d.subs.push({ id: newId("s"), cat: a.dataset.cat, name });
+    markDirty(); adminRender();
+  }
+  else if (k === "mdel") {
+    if (subsIn(d, a.dataset.id).length) { setStatus("المجموعة دي فيها مجموعات فرعية. احذفها أو انقل أصنافها الأول.", true); return; }
+    d.cats = d.cats.filter((c) => c.id !== a.dataset.id); markDirty(); adminRender();
+  }
+  else if (k === "sdel") {
+    if (d.products.some((p) => p.sub === a.dataset.id)) { setStatus("المجموعة الفرعية دي فيها أصناف. انقلها لمجموعة تانية أو احذفها الأول.", true); return; }
+    d.subs = d.subs.filter((s) => s.id !== a.dataset.id); markDirty(); adminRender();
   }
 });
 
@@ -595,7 +748,17 @@ document.addEventListener("input", (e) => {
   const t = e.target;
   const map = { "s-name": "storeName", "s-tag": "tagline", "s-wa": "whatsapp", "s-notice": "notice" };
   if (map[t.id]) { adm.d.settings[map[t.id]] = t.value; markDirty(); }
-  else if (t.classList && t.classList.contains("c-name")) { adm.d.cats[+t.dataset.i].name = t.value; markDirty(); }
+  else if (t.id === "a-q") { adm.f.q = t.value; adm.more = 1; adminListRender(); }
+  else if (t.classList && t.classList.contains("m-name")) { const c = adm.d.cats.find((x) => x.id === t.dataset.id); if (c) { c.name = t.value; markDirty(); } }
+  else if (t.classList && t.classList.contains("s-name")) { const s = adm.d.subs.find((x) => x.id === t.dataset.id); if (s) { s.name = t.value; markDirty(); } }
+});
+
+document.addEventListener("change", (e) => {
+  if (!adm) return;
+  const t = e.target;
+  if (t.id === "p-cat") $("p-sub").innerHTML = subsIn(adm.d, t.value).map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+  else if (t.id === "a-cat") { adm.f.cat = t.value; adm.f.sub = ""; adm.more = 1; adminRender(); }
+  else if (t.id === "a-sub") { adm.f.sub = t.value; adm.more = 1; adminListRender(); }
 });
 
 document.addEventListener("submit", (e) => {
@@ -617,7 +780,7 @@ document.addEventListener("submit", (e) => {
   openCart(true);
 });
 
-$("q").addEventListener("input", (e) => { query = e.target.value; gridRender(); });
+$("q").addEventListener("input", (e) => { query = e.target.value; paneRender(); });
 $("openCart").addEventListener("click", () => openCart(true));
 $("closeCart").addEventListener("click", () => openCart(false));
 $("scrim").addEventListener("click", () => openCart(false));
@@ -625,8 +788,9 @@ $("adminBtn").addEventListener("click", openAdmin);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (adm) closeAdmin(); else openCart(false); } });
 
 headRender();
-chipsRender();
-render();
+navRender(false);
+cartRender();
+barRender();
 
 /* زر الإدارة يظهر للمحررين بس */
 (async () => {
@@ -636,4 +800,4 @@ render();
     if (u && (await u.canEdit())) $("adminBtn").hidden = false;
   } catch (e) {}
 })();
-</script></body></html>
+</script>
