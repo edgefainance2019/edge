@@ -1,0 +1,639 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>ايدج للتوزيع</title><meta name="claude:viewport-fit-sides" content="cover"><style id="app-css">
+/* Layout: wholesale order sheet. Product grid sold by the carton on the right (RTL),
+   sticky order panel on the left on desktop, bottom sheet on phones.
+   Editors get an admin sheet to manage products, categories and settings. */
+:root {
+  --bg: #f1f4f2;
+  --card: #ffffff;
+  --ink: #13211b;
+  --muted: #5b6b63;
+  --line: #d3dcd7;
+  --accent: #0d6b4e;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0f0e9;
+  --tag: #f3b61f;
+  --tag-ink: #3a2a00;
+  --danger: #b3261e;
+  --shadow: rgba(19, 33, 27, 0.12);
+  --f-display: "Reem Kufi", "Tajawal", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans Arabic", "Tajawal", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1613; --card: #15201c; --ink: #e6efea; --muted: #93a69c; --line: #28372f;
+    --accent: #3fcb9b; --accent-ink: #06231a; --accent-soft: #163428;
+    --tag: #e9b324; --tag-ink: #2a1f00; --danger: #ff8a80; --shadow: rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1613; --card: #15201c; --ink: #e6efea; --muted: #93a69c; --line: #28372f;
+  --accent: #3fcb9b; --accent-ink: #06231a; --accent-soft: #163428;
+  --tag: #e9b324; --tag-ink: #2a1f00; --danger: #ff8a80; --shadow: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 96px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.app { max-width: 1180px; margin-inline: auto; }
+
+.notice { margin-top: 12px; padding: 8px 12px; border: 1px dashed var(--tag); border-radius: 4px; font-size: 13px; color: var(--muted); }
+header.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 0 18px; }
+.brand h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: clamp(32px, 6vw, 52px); line-height: 1.1; letter-spacing: 0; text-wrap: balance; }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 46ch; }
+.rule { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); align-items: center; }
+.rule span { border: 1px solid var(--line); background: var(--card); padding: 3px 10px; border-radius: 3px; }
+.btn-admin { border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); padding: 5px 14px; border-radius: 4px; font-weight: 600; }
+
+.toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.search { width: 100%; padding: 10px 14px; border: 1px solid var(--line); background: var(--card); border-radius: 4px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.chip { flex: none; padding: 6px 14px; border: 1px solid var(--line); background: var(--card); border-radius: 999px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 18px; }
+@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.empty { grid-column: 1 / -1; padding: 40px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; }
+.prod { background: var(--card); border: 1px solid var(--line); border-radius: 4px; display: flex; flex-direction: column; min-width: 0; }
+.prod .strip { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px dashed var(--line); font-size: 12px; color: var(--muted); }
+.sku { font-family: var(--f-mono); direction: ltr; background: var(--tag); color: var(--tag-ink); padding: 1px 7px; border-radius: 2px; font-weight: 500; display: inline-block; }
+.prod .box { display: grid; place-items: center; padding: 14px 0 4px; color: var(--accent); }
+.prod .box svg { width: 64px; height: 64px; }
+.prod .body { padding: 6px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.prod h3 { margin: 0; font-size: 16px; font-weight: 600; text-wrap: balance; }
+.pack { color: var(--muted); font-size: 13px; }
+.price { margin-top: auto; padding-top: 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price strong { font-family: var(--f-display); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.price small { color: var(--muted); font-size: 12px; }
+.add { width: 100%; margin-top: 8px; padding: 9px 12px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.add:hover { filter: brightness(1.08); }
+
+.stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
+.stepper button { width: 38px; border: 0; background: transparent; font-size: 20px; line-height: 1; }
+.stepper button:hover { background: var(--accent-soft); }
+.stepper output { min-width: 40px; display: grid; place-items: center; font-weight: 600; font-variant-numeric: tabular-nums; border-inline: 1px solid var(--line); }
+.prod .stepper { width: 100%; margin-top: 8px; }
+.prod .stepper output { flex: 1; }
+.prod .stepper button { height: 38px; }
+
+.cart { background: var(--card); border: 1px solid var(--line); border-radius: 4px; display: flex; flex-direction: column; }
+@media (min-width: 900px) { .cart { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 150px); max-height: calc(100vh - 170px); overflow: auto; } }
+@media (max-width: 899px) {
+  .cart { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; max-height: 88%; overflow: auto; border-radius: 10px 10px 0 0; transform: translateY(105%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 40px var(--shadow); }
+  .cart.open { transform: none; visibility: visible; transition: transform .22s ease; }
+}
+.cart-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.cart-head h2 { margin: 0; font-family: var(--f-display); font-size: 22px; }
+.close { display: none; border: 1px solid var(--line); background: transparent; border-radius: 4px; padding: 4px 10px; }
+@media (max-width: 899px) { .close { display: inline-block; } }
+.lines { list-style: none; margin: 0; padding: 0; }
+.line { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.line .nm { font-weight: 600; min-width: 0; }
+.line .sub { color: var(--muted); font-size: 12px; }
+.line .tot { font-weight: 600; font-variant-numeric: tabular-nums; text-align: left; }
+.line .rm { border: 0; background: transparent; color: var(--danger); font-size: 12px; padding: 0; }
+.line .ctl { display: flex; align-items: center; gap: 12px; grid-column: 1 / -1; }
+.line .stepper button { height: 32px; width: 34px; }
+.cart-empty { padding: 28px 14px; color: var(--muted); text-align: center; }
+.sum { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.sum strong { font-family: var(--f-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+
+form.order { display: grid; gap: 10px; padding: 14px; }
+.field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.field input, .field textarea, .field select { width: 100%; padding: 9px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; }
+.field textarea { min-height: 64px; resize: vertical; }
+.field .err { color: var(--danger); font-size: 12px; }
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: var(--danger); }
+.submit { padding: 12px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 16px; }
+.submit[disabled] { opacity: .45; cursor: not-allowed; }
+
+.done { padding: 14px; display: grid; gap: 12px; }
+.done h3 { margin: 0; font-family: var(--f-display); font-size: 22px; }
+.ref { font-family: var(--f-mono); direction: ltr; display: inline-block; background: var(--tag); color: var(--tag-ink); padding: 1px 8px; border-radius: 2px; }
+.done textarea { width: 100%; min-height: 190px; padding: 10px; border: 1px dashed var(--line); background: var(--bg); border-radius: 4px; font-family: var(--f-body); font-size: 13px; }
+.btns { display: grid; gap: 8px; }
+.btn { display: block; text-align: center; text-decoration: none; padding: 11px; border-radius: 4px; border: 1px solid var(--accent); font-weight: 600; background: transparent; color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+
+.bar { position: fixed; z-index: 40; bottom: 0; left: 0; right: 0; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px var(--shadow); }
+.bar button { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+@media (min-width: 900px) { .bar { display: none; } body { padding-bottom: 40px; } }
+.scrim { position: fixed; inset: 0; z-index: 45; background: rgba(0, 0, 0, 0.45); }
+footer { margin-top: 32px; color: var(--muted); font-size: 12px; }
+
+/* admin sheet */
+.admin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: auto;
+  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.ad-wrap { max-width: 860px; margin-inline: auto; }
+.ad-head { position: sticky; top: 0; z-index: 2; background: var(--bg); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ad-head h2 { margin: 0; font-family: var(--f-display); font-size: 24px; margin-inline-end: auto; }
+.ad-status { font-size: 13px; color: var(--muted); width: 100%; order: 5; min-height: 20px; }
+.ad-status.bad { color: var(--danger); }
+.ad-btn { padding: 8px 16px; border-radius: 4px; border: 1px solid var(--line); background: var(--card); font-weight: 600; }
+.ad-btn.main { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ad-btn.danger { color: var(--danger); border-color: var(--danger); }
+.ad-btn.sm { padding: 3px 10px; font-size: 13px; font-weight: 500; }
+.ad-btn[disabled] { opacity: .5; cursor: not-allowed; }
+.ad-tabs { display: flex; gap: 6px; margin: 14px 0; }
+.ad-tab { padding: 8px 16px; border: 1px solid var(--line); background: var(--card); border-radius: 4px; font-weight: 600; }
+.ad-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ad-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.ad-row { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+.ad-row .info { min-width: 0; flex: 1 1 220px; }
+.ad-row .sub { color: var(--muted); font-size: 12px; }
+.ad-row.off { opacity: .65; }
+.ad-act { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { font-size: 11px; border: 1px solid var(--line); padding: 0 6px; border-radius: 3px; color: var(--muted); }
+.ad-form { background: var(--card); border: 1px solid var(--accent); border-radius: 4px; padding: 14px; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ad-form .wide { grid-column: 1 / -1; }
+.ad-form .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 560px) { .ad-form { grid-template-columns: minmax(0, 1fr); } }
+.ad-sec { margin: 22px 0 8px; font-family: var(--f-display); font-size: 20px; }
+.ad-grid { display: grid; gap: 10px; }
+.check { display: flex; gap: 8px; align-items: center; }
+.check input { width: auto; }
+@media (prefers-reduced-motion: reduce) { .cart { transition: none !important; } }
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap"><template id="shell">
+<div class="app" dir="rtl" lang="ar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="carton" viewBox="0 0 64 64">
+      <path d="M8 20 32 8l24 12v26L32 58 8 46Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
+      <path d="M8 20l24 12 24-12M32 32v26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
+      <path d="M20 14l24 12v8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
+    </symbol>
+  </svg>
+
+  <div class="notice" id="notice" hidden=""></div>
+
+  <header class="top">
+    <div class="brand">
+      <h1 id="brandName"></h1>
+      <p id="tagline"></p>
+    </div>
+    <div class="rule"><span>البيع بالكرتونة</span><span>الأسعار بالجنيه المصري</span><button type="button" class="btn-admin" id="adminBtn" hidden="">إدارة الموقع</button></div>
+  </header>
+
+  <div class="toolbar">
+    <input id="q" class="search" type="search" placeholder="دوّر على صنف أو كود…" aria-label="بحث في الأصناف" autocomplete="off">
+    <div class="chips" id="chips" role="group" aria-label="التصنيفات"></div>
+  </div>
+
+  <div class="layout">
+    <main><div class="grid" id="grid"></div></main>
+
+    <aside class="cart" id="cart" aria-label="السلة">
+      <div class="cart-head">
+        <h2>طلبك</h2>
+        <button class="close" id="closeCart" type="button">إغلاق</button>
+      </div>
+      <div id="cartBody"></div>
+    </aside>
+  </div>
+
+  <footer>الكميات والأسعار النهائية بتتأكد مع مندوب المبيعات قبل التوصيل.</footer>
+
+  <div class="bar" id="bar"><button id="openCart" type="button"><span id="barCount">السلة فاضية</span><span id="barTotal"></span></button></div>
+  <div class="scrim" id="scrim" hidden=""></div>
+
+  <div class="admin" id="admin" hidden="" role="dialog" aria-label="إدارة الموقع"><div class="ad-wrap" id="adminBody"></div></div>
+</div>
+</template><div id="root"></div><script type="application/json" id="site-data">{"settings":{"storeName":"ايدج للتجارة والتوزيع","tagline":"اختار الأصناف، حدد عدد الكراتين، وابعت الطلب. بنراجعه معاك ونأكد ميعاد التوصيل.","whatsapp":"201021397965","notice":"نسخة تجريبية. الأصناف والأسعار دي أمثلة لحد ما تحط أصنافكم الحقيقية."},"cats":[{"id":"oil","name":"زيوت وسمن"},{"id":"gro","name":"بقالة"},{"id":"bev","name":"مشروبات"},{"id":"cln","name":"منظفات"}],"products":[{"sku":"OIL-101","cat":"oil","name":"زيت عباد الشمس ١ لتر","pcs":12,"unit":"كرتونة","price":840,"hidden":false},{"sku":"OIL-102","cat":"oil","name":"سمن نباتي ٧٠٠ جم","pcs":12,"unit":"كرتونة","price":780,"hidden":false},{"sku":"GRO-201","cat":"gro","name":"أرز مصري ١ كجم","pcs":10,"unit":"كرتونة","price":520,"hidden":false},{"sku":"GRO-202","cat":"gro","name":"سكر أبيض ١ كجم","pcs":10,"unit":"كرتونة","price":480,"hidden":false},{"sku":"GRO-203","cat":"gro","name":"مكرونة ٤٠٠ جم","pcs":20,"unit":"كرتونة","price":360,"hidden":false},{"sku":"GRO-204","cat":"gro","name":"صلصة طماطم ٣٠٠ جم","pcs":24,"unit":"كرتونة","price":420,"hidden":false},{"sku":"BEV-301","cat":"bev","name":"شاي أسود ٢٥٠ جم","pcs":20,"unit":"كرتونة","price":1600,"hidden":false},{"sku":"BEV-302","cat":"bev","name":"مياه معدنية ١٫٥ لتر","pcs":6,"unit":"شرينك","price":54,"hidden":false},{"sku":"BEV-303","cat":"bev","name":"عصير مانجو ١ لتر","pcs":12,"unit":"كرتونة","price":420,"hidden":false},{"sku":"CLN-401","cat":"cln","name":"سائل غسيل أطباق ٧٥٠ مل","pcs":12,"unit":"كرتونة","price":540,"hidden":false},{"sku":"CLN-402","cat":"cln","name":"مسحوق غسيل ٢ كجم","pcs":6,"unit":"كرتونة","price":720,"hidden":false},{"sku":"CLN-403","cat":"cln","name":"مناديل ورقية","pcs":48,"unit":"كرتونة","price":960,"hidden":false}]}</script><script id="app-js">
+const TITLE = "ايدج للتوزيع";
+const META_FIT = '<meta name="claude:viewport-fit-sides" content="cover">';
+const FONT_LINKS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap">';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n) => Number(n).toLocaleString("ar-EG", { maximumFractionDigits: 2 });
+const money = (n) => fmt(n) + " ج.م";
+const toLatinDigits = (s) => String(s).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+$("root").appendChild($("shell").content.cloneNode(true));
+
+const data = JSON.parse($("site-data").textContent);
+const unitOf = (p) => p.unit || "كرتونة";
+const catName = (id) => (data.cats.find((c) => c.id === id) || {}).name || "";
+const visible = () => data.products.filter((p) => !p.hidden && data.cats.some((c) => c.id === p.cat));
+const byId = Object.fromEntries(visible().map((p) => [p.sku, p]));
+
+let cart = {};
+let cat = "all";
+let query = "";
+let placed = null;
+const draft = { name: "", phone: "", address: "", notes: "" };
+
+try { cart = JSON.parse(localStorage.getItem("edge-cart") || "{}"); } catch (e) { cart = {}; }
+Object.keys(cart).forEach((k) => { if (!byId[k] || !(cart[k] > 0)) delete cart[k]; });
+function save() { try { localStorage.setItem("edge-cart", JSON.stringify(cart)); } catch (e) {} }
+
+function totals() {
+  let n = 0, sum = 0;
+  for (const k in cart) { n += cart[k]; sum += cart[k] * byId[k].price; }
+  return { n, sum };
+}
+function setQty(sku, q) {
+  if (q <= 0) delete cart[sku]; else cart[sku] = Math.min(q, 999);
+  placed = null;
+  save();
+  render();
+}
+
+function headRender() {
+  $("brandName").textContent = data.settings.storeName;
+  $("tagline").textContent = data.settings.tagline;
+  $("notice").textContent = data.settings.notice || "";
+  $("notice").hidden = !data.settings.notice;
+}
+
+function chipsRender() {
+  const used = data.cats.filter((c) => visible().some((p) => p.cat === c.id));
+  if (cat !== "all" && !used.some((c) => c.id === cat)) cat = "all";
+  const all = [{ id: "all", name: "الكل" }, ...used];
+  $("chips").innerHTML = all.map((c) => `<button type="button" class="chip" data-cat="${esc(c.id)}" aria-pressed="${cat === c.id}">${esc(c.name)}</button>`).join("");
+}
+
+function stepperHtml(sku, q) {
+  return `<div class="stepper"><button type="button" data-act="dec" data-sku="${esc(sku)}" aria-label="تقليل">−</button><output aria-live="polite">${fmt(q)}</output><button type="button" data-act="inc" data-sku="${esc(sku)}" aria-label="زيادة">+</button></div>`;
+}
+
+function gridRender() {
+  const term = query.trim().toLowerCase();
+  const list = visible().filter((p) => (cat === "all" || p.cat === cat) && (!term || p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)));
+  if (!list.length) {
+    $("grid").innerHTML = `<div class="empty">${data.products.length ? "مفيش صنف بالاسم ده. جرّب كلمة تانية." : "لسه ما فيش أصناف."}</div>`;
+    return;
+  }
+  $("grid").innerHTML = list.map((p) => {
+    const q = cart[p.sku] || 0;
+    const per = p.price / p.pcs;
+    return `<article class="prod">
+      <div class="strip"><span class="sku">${esc(p.sku)}</span><span>${esc(catName(p.cat))}</span></div>
+      <div class="box"><svg aria-hidden="true"><use href="#carton"/></svg></div>
+      <div class="body">
+        <h3>${esc(p.name)}</h3>
+        <div class="pack">${esc(unitOf(p))} ${fmt(p.pcs)} عبوة</div>
+        <div class="price"><strong>${money(p.price)}</strong><small>≈ ${money(per)} للعبوة</small></div>
+        ${q ? stepperHtml(p.sku, q) : `<button type="button" class="add" data-act="add" data-sku="${esc(p.sku)}">ضيف للسلة</button>`}
+      </div></article>`;
+  }).join("");
+}
+
+function orderText(ref, f) {
+  const lines = Object.keys(cart).map((k) => { const p = byId[k]; return `• ${p.name} (${p.sku}) × ${fmt(cart[k])} ${unitOf(p)} = ${money(cart[k] * p.price)}`; });
+  return [
+    `طلب جديد من ${data.settings.storeName}`,
+    `رقم الطلب: ${ref}`,
+    `الاسم: ${f.name}`,
+    `الموبايل: ${f.phone}`,
+    `العنوان: ${f.address}`,
+    "",
+    ...lines,
+    "",
+    `الإجمالي: ${money(totals().sum)}`,
+    f.notes ? `ملاحظات: ${f.notes}` : ""
+  ].filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n").trim();
+}
+
+function cartRender() {
+  const { n, sum } = totals();
+  const body = $("cartBody");
+  if (placed) {
+    const wa = data.settings.whatsapp ? `https://wa.me/${encodeURIComponent(data.settings.whatsapp)}?text=${encodeURIComponent(placed.text)}` : "";
+    body.innerHTML = `<div class="done">
+      <h3>الطلب جاهز للإرسال</h3>
+      <div>رقم الطلب <span class="ref">${esc(placed.ref)}</span></div>
+      <p class="hint">الطلب لسه ما اتبعتش. ابعته لنا من الزر تحت أو انسخه وابعته على واتساب.</p>
+      <textarea id="orderText" readonly dir="rtl" aria-label="نص الطلب"></textarea>
+      <div class="btns">
+        ${wa ? `<a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">ابعت الطلب على واتساب</a>` : ""}
+        <button type="button" class="btn ${wa ? "" : "primary"}" data-act="copy">انسخ الطلب</button>
+        <button type="button" class="btn" data-act="new">طلب جديد</button>
+      </div>
+      <p class="hint" id="copyMsg" role="status"></p>
+    </div>`;
+    $("orderText").value = placed.text;
+    return;
+  }
+  if (!n) { body.innerHTML = `<div class="cart-empty">السلة فاضية. اختار أصناف من القايمة.</div>`; return; }
+  body.innerHTML = `<ul class="lines">${Object.keys(cart).map((k) => {
+    const p = byId[k];
+    return `<li class="line"><div><div class="nm">${esc(p.name)}</div><div class="sub">${money(p.price)} لل${esc(unitOf(p))}</div></div>
+      <div class="tot">${money(cart[k] * p.price)}</div>
+      <div class="ctl">${stepperHtml(k, cart[k])}<button type="button" class="rm" data-act="rm" data-sku="${esc(k)}">شيل</button></div></li>`;
+  }).join("")}</ul>
+  <div class="sum"><span>إجمالي الطلب (${fmt(n)} وحدة)</span><strong>${money(sum)}</strong></div>
+  <form class="order" id="orderForm" novalidate>
+    <div class="field"><label for="f-name">الاسم / اسم المحل</label><input id="f-name" name="name" autocomplete="name"><div class="err" id="e-name"></div></div>
+    <div class="field"><label for="f-phone">رقم الموبايل</label><input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx" dir="ltr" style="text-align:right"><div class="err" id="e-phone"></div></div>
+    <div class="field"><label for="f-address">عنوان التوصيل</label><textarea id="f-address" name="address" autocomplete="street-address"></textarea><div class="err" id="e-address"></div></div>
+    <div class="field"><label for="f-notes">ملاحظات (اختياري)</label><input id="f-notes" name="notes"></div>
+    <button class="submit" type="submit">تأكيد الطلب</button>
+  </form>`;
+  ["name", "phone", "address", "notes"].forEach((k) => {
+    const el = $("f-" + k);
+    el.value = draft[k];
+    el.addEventListener("input", () => { draft[k] = el.value; el.removeAttribute("aria-invalid"); const e = $("e-" + k); if (e) e.textContent = ""; });
+  });
+}
+
+function barRender() {
+  const { n, sum } = totals();
+  $("barCount").textContent = n ? `السلة (${fmt(n)})` : "السلة فاضية";
+  $("barTotal").textContent = n ? money(sum) : "";
+}
+
+function render() {
+  const active = document.activeElement;
+  const key = active && active.dataset && active.dataset.act ? `[data-act="${active.dataset.act}"][data-sku="${active.dataset.sku}"]` : null;
+  const inCart = active && active.closest && active.closest("#cart");
+  gridRender();
+  const keepFormFocus = active && active.id && /^f-/.test(active.id);
+  if (!keepFormFocus) cartRender();
+  barRender();
+  if (key && !placed) {
+    const root = inCart ? $("cart") : $("grid");
+    const el = root.querySelector(key) || document.querySelector(key);
+    if (el) el.focus();
+  }
+}
+
+function openCart(open) {
+  $("cart").classList.toggle("open", open);
+  $("scrim").hidden = !open;
+}
+
+async function copyOrder() {
+  const ta = $("orderText");
+  const msg = $("copyMsg");
+  try {
+    await navigator.clipboard.writeText(placed.text);
+    msg.textContent = "تم نسخ الطلب.";
+  } catch (err) {
+    ta.focus(); ta.select();
+    msg.textContent = "حدد النص وانسخه يدويًا.";
+  }
+}
+
+/* ===================== إدارة الموقع (للمحرر فقط) ===================== */
+let adm = null; // { d: draft copy, tab, editing, dirty, delAsk, closeAsk, busy }
+
+function normWa(s) {
+  let d = toLatinDigits(s).replace(/\D/g, "").replace(/^00/, "");
+  if (/^01[0125]\d{8}$/.test(d)) d = "20" + d.slice(1);
+  return d;
+}
+
+async function publishSite(next) {
+  const artifact = await window.claude.use("artifact");
+  if (!artifact) throw { code: "not_granted" };
+  const reset = [...document.querySelectorAll("style:not(#app-css)")].map((s) => s.textContent).find((t) => t.includes("safe-area-inset"));
+  if (!reset) throw { code: "no_reset" };
+  const json = JSON.stringify(next).replace(/</g, "\\u003c");
+  const end = "<" + "/script>";
+  const html = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + reset + "</style></head><body>" +
+    "<title>" + TITLE + "</title>" + META_FIT +
+    '<style id="app-css">' + $("app-css").textContent + "</style>" + FONT_LINKS +
+    '<template id="shell">' + $("shell").innerHTML + "</template>" +
+    '<div id="root"></div>' +
+    '<script type="application/json" id="site-data">' + json + end +
+    '<script id="app-js">' + $("app-js").textContent + end +
+    "</body></html>";
+  return artifact.publish(html);
+}
+
+function setStatus(msg, bad) {
+  const el = $("adStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle("bad", !!bad);
+}
+function markDirty() { adm.dirty = true; adm.closeAsk = false; setStatus("في تغييرات لسه ما اتنشرتش."); }
+
+function openAdmin() {
+  adm = { d: clone(data), tab: "products", editing: null, dirty: false, delAsk: null, closeAsk: false, busy: false };
+  $("admin").hidden = false;
+  adminRender();
+}
+function closeAdmin() {
+  if (adm && adm.dirty && !adm.closeAsk) { adm.closeAsk = true; setStatus("في تغييرات ما اتحفظتش. دوس إغلاق تاني لو عايز تلغيها.", true); return; }
+  $("admin").hidden = true;
+  adm = null;
+}
+
+function nextSku(catId) {
+  const pre = (catId || "ITM").toUpperCase().slice(0, 3);
+  let max = 100;
+  adm.d.products.forEach((p) => { const m = p.sku.match(/-(\d+)$/); if (m && p.sku.startsWith(pre + "-")) max = Math.max(max, +m[1]); });
+  return pre + "-" + (max + 1);
+}
+
+function productFormHtml() {
+  const e = adm.editing === "__new" ? null : adm.d.products.find((p) => p.sku === adm.editing);
+  const v = e || { sku: "", cat: (adm.d.cats[0] || {}).id || "", name: "", pcs: 12, unit: "كرتونة", price: "", hidden: false };
+  return `<form class="ad-form" id="pform" novalidate>
+    <div class="field wide"><label for="p-name">اسم الصنف</label><input id="p-name" value="${esc(v.name)}"></div>
+    <div class="field"><label for="p-cat">التصنيف</label><select id="p-cat">${adm.d.cats.map((c) => `<option value="${esc(c.id)}"${c.id === v.cat ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="p-sku">الكود (سيبه فاضي ويتكتب لوحده)</label><input id="p-sku" dir="ltr" value="${esc(v.sku)}" style="text-align:right"></div>
+    <div class="field"><label for="p-unit">وحدة البيع</label><input id="p-unit" value="${esc(v.unit || "كرتونة")}"></div>
+    <div class="field"><label for="p-pcs">عدد العبوات في الوحدة</label><input id="p-pcs" type="number" min="1" step="1" inputmode="numeric" value="${esc(v.pcs)}"></div>
+    <div class="field"><label for="p-price">سعر الوحدة (ج.م)</label><input id="p-price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(v.price)}"></div>
+    <div class="field check"><input id="p-hidden" type="checkbox"${v.hidden ? " checked" : ""}><label for="p-hidden" style="margin:0">مخفي عن العملاء</label></div>
+    <div class="wide err" id="p-err" style="color:var(--danger);font-size:13px"></div>
+    <div class="wide row"><button type="submit" class="ad-btn main">${e ? "حفظ التعديل" : "إضافة الصنف"}</button><button type="button" class="ad-btn" data-ad="pcancel">إلغاء</button></div>
+  </form>`;
+}
+
+function adminRender() {
+  const d = adm.d;
+  let body = "";
+  if (adm.tab === "products") {
+    body += `<div style="margin-top:14px"><button type="button" class="ad-btn main" data-ad="padd">+ صنف جديد</button></div>`;
+    if (adm.editing) body += `<div style="margin-top:14px">${productFormHtml()}</div>`;
+    body += `<ul class="ad-list">${d.products.length ? d.products.map((p, i) => `<li class="ad-row${p.hidden ? " off" : ""}">
+      <div class="info"><span class="sku">${esc(p.sku)}</span> <b>${esc(p.name)}</b> ${p.hidden ? '<span class="badge">مخفي</span>' : ""}
+        <div class="sub">${esc(catName2(d, p.cat) || "بدون تصنيف")} · ${esc(p.unit || "كرتونة")} ${fmt(p.pcs)} عبوة · ${money(p.price)}</div></div>
+      <div class="ad-act">
+        <button type="button" class="ad-btn sm" data-ad="up" data-i="${i}" aria-label="لفوق"${i === 0 ? " disabled" : ""}>↑</button>
+        <button type="button" class="ad-btn sm" data-ad="down" data-i="${i}" aria-label="لتحت"${i === d.products.length - 1 ? " disabled" : ""}>↓</button>
+        <button type="button" class="ad-btn sm" data-ad="pedit" data-sku="${esc(p.sku)}">تعديل</button>
+        <button type="button" class="ad-btn sm" data-ad="phide" data-sku="${esc(p.sku)}">${p.hidden ? "إظهار" : "إخفاء"}</button>
+        <button type="button" class="ad-btn sm danger" data-ad="pdel" data-sku="${esc(p.sku)}">${adm.delAsk === p.sku ? "تأكيد الحذف" : "حذف"}</button>
+      </div></li>`).join("") : '<li class="empty">ما فيش أصناف. دوس "صنف جديد".</li>'}</ul>`;
+  } else {
+    body += `<h3 class="ad-sec">بيانات الموقع</h3><div class="ad-grid">
+      <div class="field"><label for="s-name">اسم الشركة</label><input id="s-name" value="${esc(d.settings.storeName)}"></div>
+      <div class="field"><label for="s-tag">جملة تحت الاسم</label><textarea id="s-tag">${esc(d.settings.tagline)}</textarea></div>
+      <div class="field"><label for="s-wa">رقم واتساب لاستقبال الطلبات</label><input id="s-wa" dir="ltr" style="text-align:right" inputmode="tel" placeholder="01xxxxxxxxx" value="${esc(d.settings.whatsapp)}"><div class="hint">لو سيبته فاضي، العميل هيقدر ينسخ الطلب بس.</div></div>
+      <div class="field"><label for="s-notice">تنبيه أعلى الصفحة (سيبه فاضي لو مش عايز تنبيه)</label><input id="s-notice" value="${esc(d.settings.notice)}"></div></div>
+      <h3 class="ad-sec">التصنيفات</h3>
+      <ul class="ad-list">${d.cats.map((c, i) => `<li class="ad-row"><div class="info"><input class="c-name" data-i="${i}" value="${esc(c.name)}" aria-label="اسم التصنيف" style="width:100%;padding:7px 10px;border:1px solid var(--line);background:var(--bg);border-radius:4px"></div>
+        <div class="ad-act"><button type="button" class="ad-btn sm danger" data-ad="cdel" data-i="${i}">حذف</button></div></li>`).join("")}</ul>
+      <div class="ad-form" style="margin-top:10px;grid-template-columns:1fr auto;align-items:end"><div class="field"><label for="c-new">تصنيف جديد</label><input id="c-new"></div><button type="button" class="ad-btn main" data-ad="cadd">إضافة</button></div>`;
+  }
+  $("adminBody").innerHTML = `<div class="ad-head"><h2>إدارة الموقع</h2>
+      <button type="button" class="ad-btn" data-ad="close">إغلاق</button>
+      <button type="button" class="ad-btn main" data-ad="save" id="adSave">حفظ ونشر</button>
+      <div class="ad-status" id="adStatus" role="status"></div></div>
+    <div class="ad-tabs" role="tablist">
+      <button type="button" class="ad-tab" role="tab" data-ad="tab" data-tab="products" aria-selected="${adm.tab === "products"}">الأصناف</button>
+      <button type="button" class="ad-tab" role="tab" data-ad="tab" data-tab="settings" aria-selected="${adm.tab === "settings"}">الإعدادات والتصنيفات</button></div>${body}`;
+  if (adm.dirty) setStatus("في تغييرات لسه ما اتنشرتش.");
+  else setStatus("التعديلات مش هتظهر للعملاء إلا بعد \"حفظ ونشر\".");
+}
+function catName2(d, id) { return (d.cats.find((c) => c.id === id) || {}).name || ""; }
+
+function submitProduct() {
+  const d = adm.d;
+  const g = (id) => $(id);
+  const name = g("p-name").value.trim();
+  const pcs = Math.floor(Number(toLatinDigits(g("p-pcs").value)));
+  const price = Number(toLatinDigits(g("p-price").value));
+  let sku = g("p-sku").value.trim().toUpperCase().replace(/\s+/g, "-");
+  const catId = g("p-cat").value;
+  const err = (m) => { g("p-err").textContent = m; };
+  if (!name) return err("اكتب اسم الصنف.");
+  if (!catId) return err("ضيف تصنيف الأول من تبويب الإعدادات.");
+  if (!(pcs >= 1)) return err("عدد العبوات لازم يكون ١ أو أكتر.");
+  if (!(price > 0)) return err("اكتب سعر أكبر من صفر.");
+  if (!sku) sku = nextSku(catId);
+  const clash = d.products.some((p) => p.sku === sku && p.sku !== adm.editing);
+  if (clash) return err("الكود ده مستخدم في صنف تاني.");
+  const item = { sku, cat: catId, name, pcs, unit: g("p-unit").value.trim() || "كرتونة", price, hidden: g("p-hidden").checked };
+  if (adm.editing === "__new") d.products.push(item);
+  else { const i = d.products.findIndex((p) => p.sku === adm.editing); if (i >= 0) d.products[i] = item; }
+  adm.editing = null;
+  markDirty();
+  adminRender();
+}
+
+async function saveAdmin() {
+  if (adm.busy) return;
+  const d = adm.d;
+  if (!d.settings.storeName.trim()) { setStatus("اسم الشركة مطلوب.", true); return; }
+  adm.busy = true;
+  $("adSave").disabled = true;
+  setStatus("جاري النشر…");
+  d.settings.whatsapp = normWa(d.settings.whatsapp);
+  try {
+    await publishSite(d);
+    setStatus("اتنشر. الصفحة بتتحدث…");
+  } catch (e) {
+    adm.busy = false;
+    const sv = $("adSave"); if (sv) sv.disabled = false;
+    const c = e && e.code;
+    if (c === "not_writer" || c === "not_granted" || c === "not_declared") setStatus("ما عندكش صلاحية تعديل الموقع.", true);
+    else if (c === "conflict") setStatus("حد نشر نسخة أحدث. الصفحة هتتحدث، وهتحتاج تعيد التعديل.", true);
+    else if (c === "rate_limited") setStatus("استنى شوية وجرّب تاني.", true);
+    else if (c === "too_large") setStatus("حجم الموقع كبير أوي. قلل الأصناف أو النصوص.", true);
+    else setStatus("ما اتنشرش. جرّب تاني.", true);
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (chip) { cat = chip.dataset.cat; chipsRender(); gridRender(); return; }
+  const b = e.target.closest("[data-act]");
+  if (b) {
+    const sku = b.dataset.sku;
+    const act = b.dataset.act;
+    if (act === "add") setQty(sku, 1);
+    else if (act === "inc") setQty(sku, (cart[sku] || 0) + 1);
+    else if (act === "dec") setQty(sku, (cart[sku] || 0) - 1);
+    else if (act === "rm") setQty(sku, 0);
+    else if (act === "new") { cart = {}; placed = null; draft.notes = ""; save(); render(); }
+    else if (act === "copy") copyOrder();
+    return;
+  }
+  const a = e.target.closest("[data-ad]");
+  if (!a || !adm) return;
+  const k = a.dataset.ad;
+  const d = adm.d;
+  if (k === "close") closeAdmin();
+  else if (k === "save") saveAdmin();
+  else if (k === "tab") { adm.tab = a.dataset.tab; adm.editing = null; adminRender(); }
+  else if (k === "padd") { adm.editing = "__new"; adminRender(); $("p-name").focus(); }
+  else if (k === "pedit") { adm.editing = a.dataset.sku; adminRender(); $("p-name").focus(); }
+  else if (k === "pcancel") { adm.editing = null; adminRender(); }
+  else if (k === "phide") { const p = d.products.find((x) => x.sku === a.dataset.sku); if (p) { p.hidden = !p.hidden; markDirty(); adminRender(); } }
+  else if (k === "pdel") {
+    if (adm.delAsk === a.dataset.sku) { d.products = d.products.filter((x) => x.sku !== a.dataset.sku); adm.delAsk = null; markDirty(); }
+    else adm.delAsk = a.dataset.sku;
+    adminRender();
+  }
+  else if (k === "up" || k === "down") {
+    const i = +a.dataset.i, j = k === "up" ? i - 1 : i + 1;
+    if (j >= 0 && j < d.products.length) { [d.products[i], d.products[j]] = [d.products[j], d.products[i]]; markDirty(); adminRender(); }
+  }
+  else if (k === "cadd") {
+    const name = $("c-new").value.trim();
+    if (!name) { setStatus("اكتب اسم التصنيف.", true); return; }
+    d.cats.push({ id: "c" + Date.now().toString(36), name });
+    markDirty(); adminRender();
+  }
+  else if (k === "cdel") {
+    const c = d.cats[+a.dataset.i];
+    if (d.products.some((p) => p.cat === c.id)) { setStatus("التصنيف ده فيه أصناف. انقلها لتصنيف تاني أو احذفها الأول.", true); return; }
+    d.cats.splice(+a.dataset.i, 1); markDirty(); adminRender();
+  }
+});
+
+document.addEventListener("input", (e) => {
+  if (!adm) return;
+  const t = e.target;
+  const map = { "s-name": "storeName", "s-tag": "tagline", "s-wa": "whatsapp", "s-notice": "notice" };
+  if (map[t.id]) { adm.d.settings[map[t.id]] = t.value; markDirty(); }
+  else if (t.classList && t.classList.contains("c-name")) { adm.d.cats[+t.dataset.i].name = t.value; markDirty(); }
+});
+
+document.addEventListener("submit", (e) => {
+  if (e.target.id === "pform") { e.preventDefault(); submitProduct(); return; }
+  if (e.target.id !== "orderForm") return;
+  e.preventDefault();
+  const f = { name: draft.name.trim(), phone: toLatinDigits(draft.phone).replace(/[\s-]/g, ""), address: draft.address.trim(), notes: draft.notes.trim() };
+  let bad = null;
+  const fail = (k, m) => { $("e-" + k).textContent = m; $("f-" + k).setAttribute("aria-invalid", "true"); if (!bad) bad = k; };
+  if (!f.name) fail("name", "اكتب الاسم.");
+  if (!/^(\+?20|0)?1[0125]\d{8}$/.test(f.phone)) fail("phone", "اكتب رقم موبايل مصري صحيح، مثال 01012345678.");
+  if (f.address.length < 6) fail("address", "اكتب العنوان بالتفصيل.");
+  if (bad) { $("f-" + bad).focus(); return; }
+  const dt = new Date();
+  const ref = "ED-" + String(dt.getFullYear()).slice(2) + String(dt.getMonth() + 1).padStart(2, "0") + String(dt.getDate()).padStart(2, "0") + "-" + Math.floor(100 + Math.random() * 900);
+  placed = { ref, text: orderText(ref, f) };
+  render();
+  $("cart").scrollTop = 0;
+  openCart(true);
+});
+
+$("q").addEventListener("input", (e) => { query = e.target.value; gridRender(); });
+$("openCart").addEventListener("click", () => openCart(true));
+$("closeCart").addEventListener("click", () => openCart(false));
+$("scrim").addEventListener("click", () => openCart(false));
+$("adminBtn").addEventListener("click", openAdmin);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (adm) closeAdmin(); else openCart(false); } });
+
+headRender();
+chipsRender();
+render();
+
+/* زر الإدارة يظهر للمحررين بس */
+(async () => {
+  try {
+    if (!window.claude || !window.claude.use) return;
+    const u = await window.claude.use("user");
+    if (u && (await u.canEdit())) $("adminBtn").hidden = false;
+  } catch (e) {}
+})();
+</script></body></html>
